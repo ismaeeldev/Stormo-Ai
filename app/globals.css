@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+:root {
+  --primary: #E8621A;
+  --dark: #1A1A1A;
+  --light-bg: #F5F5F5;
+  --muted: #AAAAAA;
+  --subtle: #666666;
+  --orange-tint: #FDF0E8;
+  --destructive: #DC2626;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--dark);
+  background-color: var(--light-bg);
+}
