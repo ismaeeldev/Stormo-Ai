@@ -90,6 +90,7 @@ export default function MilestonesPage() {
   };
 
   useEffect(() => {
+    document.title = "Milestones & Achievements | Stormo.io Dashboard";
     fetchData();
   }, []);
 

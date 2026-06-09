@@ -11,19 +11,17 @@ export default function HomepageFooter() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8 mb-12">
           {/* Logo & Tagline */}
-          <div className="space-y-4 md:col-span-1">
-            <Link href="/" className="inline-block">
-              <span className="text-2xl font-black text-white tracking-tight">
-                Stormo<span className="text-primary">.io</span>
-              </span>
+          <div className="space-y-4 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
+            <Link href="/" className="flex items-center gap-2 group">
+              <img src="/stormo-logo.png" alt="Stormo Logo" className="h-14 sm:h-16 w-auto object-contain" />
             </Link>
-            <p className="text-subtle text-sm leading-relaxed max-w-xs">
+            <p className="text-subtle text-sm leading-relaxed max-w-xs mx-auto md:mx-0">
               Momentum for your store. An always-on AI marketing manager giving you clear daily actions.
             </p>
           </div>
 
           {/* Product Links */}
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Product</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
@@ -39,7 +37,7 @@ export default function HomepageFooter() {
           </div>
 
           {/* Company Links */}
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Company</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
@@ -55,7 +53,7 @@ export default function HomepageFooter() {
           </div>
 
           {/* Support Links */}
-          <div>
+          <div className="text-center md:text-left">
             <h4 className="text-white font-bold text-sm uppercase tracking-wider mb-4">Support</h4>
             <ul className="space-y-2.5 text-sm">
               <li>

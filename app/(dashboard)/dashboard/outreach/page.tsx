@@ -14,7 +14,28 @@ import {
   MessageSquare,
   AlertCircle,
   Upload,
+  Mic,
+  BookOpen,
+  FileText,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+function getOfficialPlatformIconUrl(platform: string): string {
+  switch (platform.toLowerCase()) {
+    case 'instagram':
+      return 'https://cdn.simpleicons.org/instagram/E1306C';
+    case 'tiktok':
+      return 'https://cdn.simpleicons.org/tiktok/000000';
+    case 'youtube':
+      return 'https://cdn.simpleicons.org/youtube/FF0000';
+    case 'blog':
+      return 'https://cdn.simpleicons.org/wordpress/21759B';
+    case 'podcast':
+      return 'https://cdn.simpleicons.org/applepodcasts/872EC4';
+    default:
+      return 'https://cdn.simpleicons.org/gitbook/3884FF';
+  }
+}
 
 interface Contact {
   id: string;
@@ -95,6 +116,7 @@ export default function OutreachPage() {
   };
 
   useEffect(() => {
+    document.title = "Outreach CRM | Stormo.io Dashboard";
     fetchContacts();
   }, []);
 
@@ -426,6 +448,7 @@ export default function OutreachPage() {
                 {contacts.map((contact) => {
                   const currentStatus = STATUSES.find((s) => s.value === contact.status) || STATUSES[0];
                   const isOverdue = contact.followUpDue && contact.followUpDue <= todayStr && contact.status !== 'agreed' && contact.status !== 'declined';
+                  const iconUrl = getOfficialPlatformIconUrl(contact.platform);
                   
                   return (
                     <tr key={contact.id} className="hover:bg-gray-50/50 transition-colors">
@@ -445,9 +468,10 @@ export default function OutreachPage() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className="capitalize bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200 font-medium">
-                          {contact.platform}
-                        </span>
+                        <div className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-2 py-0.5 rounded border border-gray-200 font-medium w-fit">
+                          <img src={iconUrl} className="h-3.5 w-3.5 object-contain" alt={contact.platform} />
+                          <span className="capitalize text-xs">{contact.platform}</span>
+                        </div>
                         {contact.followerCount && (
                           <span className="text-[10px] text-subtle block mt-1">
                             {contact.followerCount.toLocaleString()} followers
@@ -626,10 +650,8 @@ export default function OutreachPage() {
                   <p className="text-subtle text-xs">Stormo is crafting a personalized cold pitch...</p>
                 </div>
               ) : (
-                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm min-h-[120px]">
-                  <p className="text-dark text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                    {draftContent}
-                  </p>
+                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm min-h-[120px] text-dark text-xs leading-relaxed font-sans space-y-3">
+                  <ReactMarkdown>{draftContent}</ReactMarkdown>
                 </div>
               )}
             </div>

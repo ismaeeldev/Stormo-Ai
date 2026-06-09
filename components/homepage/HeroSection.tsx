@@ -6,7 +6,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 
 export default function HeroSection() {
   return (
-    <section className="relative bg-[#1A1A1A] overflow-hidden text-center flex flex-col justify-center items-center py-28 sm:py-36 px-4">
+    <section className="relative bg-[#1A1A1A] overflow-hidden text-center flex flex-col justify-center items-center pt-28 sm:pt-36 pb-24 sm:pb-32 md:pb-44 px-4">
       {/* Subtle Orange Geometric SVG Accent Background */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <svg
@@ -69,6 +69,13 @@ export default function HeroSection() {
             $9 first month. Then $29/month. Cancel anytime. Works with every store platform.
           </p>
         </div>
+      </div>
+
+      {/* Concave Arc Divider */}
+      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px] md:h-[60px] fill-white">
+          <path d="M0,0 C300,90 900,90 1200,0 L1200,120 L0,120 Z" />
+        </svg>
       </div>
     </section>
   );

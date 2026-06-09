@@ -69,14 +69,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-light-bg flex">
       {/* Desktop Sidebar (Fixed, 240px wide) */}
-      <aside className="hidden md:flex flex-col w-60 bg-dark text-white border-r border-gray-800 flex-shrink-0">
+      <aside className="hidden md:flex flex-col w-60 h-screen sticky top-0 bg-dark text-white border-r border-gray-800 flex-shrink-0">
         {/* Top Header Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-800">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary fill-primary" />
-            <span className="text-xl font-bold tracking-tight text-white">
-              Stormo<span className="text-primary">.io</span>
-            </span>
+        <div className="h-24 flex items-center px-6 border-b border-gray-800">
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <img src="/stormo-logo.png" alt="Stormo Logo" className="h-20 w-auto object-contain" />
           </Link>
         </div>
 
@@ -127,14 +124,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Drawer menu */}
           <aside className="relative flex flex-col w-64 bg-dark text-white h-full shadow-2xl transition-transform duration-300">
-            <div className="h-16 flex items-center justify-between px-6 border-b border-gray-800">
-              <Link href="/dashboard" className="flex items-center gap-2">
-                <Zap className="h-6 w-6 text-primary fill-primary" />
-                <span className="text-xl font-bold tracking-tight text-white">Stormo.io</span>
+            <div className="h-16 flex items-center justify-center px-6 border-b border-gray-800 relative">
+              <Link href="/dashboard" className="flex items-center gap-2.5">
+                <img src="/stormo-logo.png" alt="Stormo Logo" className="h-13 w-auto object-contain" />
               </Link>
               <button
                 onClick={() => setIsMobileOpen(false)}
-                className="p-1 rounded-md text-muted hover:text-white hover:bg-[#252525]"
+                className="absolute right-4 p-1 rounded-md text-muted hover:text-white hover:bg-[#252525]"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -179,16 +175,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar (Mobile Only) */}
-        <header className="h-16 border-b border-gray-200 bg-white flex items-center justify-between px-4 md:hidden flex-shrink-0">
+        <header className="h-16 border-b border-gray-800 bg-dark flex items-center justify-between px-4 md:hidden flex-shrink-0">
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="p-2 rounded-md text-dark hover:bg-gray-100"
+            className="p-2 rounded-md text-muted hover:text-white hover:bg-[#252525] transition-colors"
           >
             <Menu className="h-6 w-6" />
           </button>
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-primary fill-primary" />
-            <span className="text-lg font-bold tracking-tight text-dark">Stormo.io</span>
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <img src="/stormo-logo.png" alt="Stormo Logo" className="h-12 w-auto object-contain" />
           </Link>
           <div className="w-10"></div> {/* Spacer to center the logo */}
         </header>

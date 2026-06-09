@@ -5,6 +5,12 @@ import { db } from '@/lib/db';
 import { actions, weeklyContent, outreachContacts } from '@/lib/db/schema';
 import { eq, and, gte, desc, count } from 'drizzle-orm';
 import { Zap, FileText, Users, Trophy, Loader2 } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Today's Action | Stormo.io Dashboard",
+  description: "Complete your daily marketing action and scale your store growth.",
+};
 
 // Streak Calculation Helper
 function calculateStreak(completedDates: Date[]): number {

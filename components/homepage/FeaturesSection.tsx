@@ -38,7 +38,7 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section className="py-24 bg-white border-t border-gray-100">
+    <section className="relative py-24 bg-white pb-24 sm:pb-32 md:pb-40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Headline */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -57,17 +57,24 @@ export default function FeaturesSection() {
             return (
               <div
                 key={idx}
-                className="bg-white rounded-xl shadow-md p-6 sm:p-8 border border-gray-150 flex flex-col items-start hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                className="group bg-white rounded-2xl shadow-md p-6 sm:p-8 border border-gray-200/60 flex flex-col items-start hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2"
               >
-                <div className="bg-primary/10 p-3 rounded-lg w-fit mb-5">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 group-hover:bg-primary p-3 rounded-lg w-fit mb-5 transition-all duration-300">
+                  <Icon className="h-6 w-6 text-primary group-hover:text-white transition-all duration-300 transform group-hover:scale-110 group-hover:rotate-3" />
                 </div>
-                <h3 className="text-lg font-bold text-dark mb-2">{feat.title}</h3>
+                <h3 className="text-lg font-bold text-dark mb-2 group-hover:text-primary transition-colors duration-300">{feat.title}</h3>
                 <p className="text-subtle text-sm leading-relaxed">{feat.desc}</p>
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* Asymmetric Wave Divider */}
+      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px] md:h-[60px] fill-[#F5F5F5]">
+          <path d="M0,60 C150,100 350,20 500,60 C650,100 850,100 1200,40 L1200,120 L0,120 Z" />
+        </svg>
       </div>
     </section>
   );

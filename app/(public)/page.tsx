@@ -1,5 +1,4 @@
 import React from 'react';
-import Navbar from '@/components/homepage/Navbar';
 import HeroSection from '@/components/homepage/HeroSection';
 import PainSection from '@/components/homepage/PainSection';
 import HowItWorksSection from '@/components/homepage/HowItWorksSection';
@@ -25,11 +24,8 @@ export const metadata: Metadata = {
 export default function Homepage() {
   return (
     <div className="flex flex-col min-h-screen bg-[#F5F5F5]">
-      {/* 1. Header Navigation */}
-      <Navbar />
-
       {/* Offset wrapper for fixed navbar */}
-      <div className="pt-20">
+      <div className="pt-20 bg-[#1A1A1A]">
         {/* 2. Hero Section */}
         <HeroSection />
       </div>

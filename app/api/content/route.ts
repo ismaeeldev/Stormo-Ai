@@ -3,6 +3,12 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { weeklyContent } from '@/lib/db/schema';
 import { eq, and, ne } from 'drizzle-orm';
+import { users } from '@/lib/db/schema';
+import { weeklyContentQueue } from '@/lib/jobs/queues';
+
+// Initialize BullMQ workers in the background
+import '@/lib/jobs/workers/weekly-content.worker';
+import '@/lib/jobs/workers/action-compression.worker';
 
 function getMondayOfCurrentWeek() {
   const today = new Date();
@@ -23,7 +29,7 @@ export async function GET() {
     const currentWeekStart = getMondayOfCurrentWeek();
 
     // Fetch this week's content
-    const thisWeek = await db
+    let thisWeek = await db
       .select()
       .from(weeklyContent)
       .where(
@@ -32,6 +38,38 @@ export async function GET() {
           eq(weeklyContent.weekStart, currentWeekStart)
         )
       );
+
+    // If no content for the current week exists, check if onboarding is complete and trigger generation in background
+    if (thisWeek.length === 0) {
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (userResult.length > 0 && userResult[0].onboardingCompleted) {
+        const contentTypes = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
+        const jobPromises = contentTypes.map((contentType) =>
+          weeklyContentQueue.add(
+            'generate-weekly-content',
+            {
+              userId,
+              contentType,
+              weekStart: currentWeekStart,
+            },
+            {
+              attempts: 3,
+              backoff: {
+                type: 'exponential',
+                delay: 60000,
+              },
+            }
+          )
+        );
+        await Promise.all(jobPromises);
+        console.log(`[Content Get API] Auto-enqueued 6 content generation jobs for user ${userId} for week starting ${currentWeekStart}`);
+      }
+    }
 
     // Fetch previous weeks' content
     const pastContent = await db

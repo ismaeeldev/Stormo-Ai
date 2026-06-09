@@ -22,6 +22,10 @@ interface TopicStep {
 export default function OnboardingPage() {
   const router = useRouter();
   const { data: session, update: updateSession } = useSession();
+
+  React.useEffect(() => {
+    document.title = "Onboarding | Stormo.io";
+  }, []);
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -207,16 +211,18 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-light-bg overflow-hidden">
+    <div className="h-screen flex flex-col bg-[#F5F5F5] overflow-hidden">
       {/* Top Header Panel */}
-      <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0 z-10 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Zap className="h-6 w-6 text-primary fill-primary" />
-          <span className="text-xl font-bold text-dark">Stormo.io Onboarding</span>
+      <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 flex-shrink-0 z-10 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <img src="/stormo-logo.png" alt="Stormo Logo" className="h-10 sm:h-12 w-auto object-contain" />
+          <span className="ml-2.5 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-2.5 py-0.5 rounded-md">
+            Onboarding
+          </span>
         </div>
         <div className="text-right">
-          <h1 className="text-sm font-bold text-dark">Let's set up your store</h1>
-          <p className="text-xs text-subtle">This takes about 10 minutes</p>
+          <h1 className="text-sm font-extrabold text-dark">Set up your store</h1>
+          <p className="text-[11px] font-medium text-subtle">Takes ~10 minutes</p>
         </div>
       </header>
 
@@ -284,6 +290,48 @@ export default function OnboardingPage() {
             })}
           </div>
 
+          {/* Dynamic Step Guide Header */}
+          <div className="bg-white border-b border-gray-100 p-4 sm:p-5 flex-shrink-0 z-10 shadow-[0_2px_10px_rgba(0,0,0,0.01)]">
+            <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 text-primary">
+                  <Sparkles className="h-5 w-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-dark text-sm flex items-center gap-2">
+                    Current Goal: {topicSteps.find(s => s.id === currentTopic)?.name}
+                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
+                      Step {currentTopic} of 5
+                    </span>
+                  </h3>
+                  <p className="text-xs text-subtle mt-0.5">
+                    {currentTopic === 1 && "Provide your store URL and the platform you use (e.g. Shopify, WooCommerce)."}
+                    {currentTopic === 2 && "Describe what types of products you sell and their average price range."}
+                    {currentTopic === 3 && "Tell us about your target or ideal customer (interests, demographics, behaviors)."}
+                    {currentTopic === 4 && "Let us know how many hours you can dedicate to marketing actions per week."}
+                    {currentTopic === 5 && "Share the main challenges you face in growing and scaling your store."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex-shrink-0 flex items-center gap-2">
+                <span className="text-[11px] font-semibold text-subtle">Quick Sample:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (currentTopic === 1) setInputText("https://mypremiumshop.com on Shopify");
+                    if (currentTopic === 2) setInputText("We sell eco-friendly leather wallets and backpacks. Our prices range from $40 to $120.");
+                    if (currentTopic === 3) setInputText("Our target customers are eco-conscious young professionals and students who appreciate minimalism.");
+                    if (currentTopic === 4) setInputText("I have about 8 hours per week available to work on marketing actions.");
+                    if (currentTopic === 5) setInputText("Our biggest challenge is driving organic search traffic and converting social media followers.");
+                  }}
+                  className="text-xs text-primary font-bold bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 rounded-lg px-2.5 py-1.5 transition-all cursor-pointer"
+                >
+                  Fill Sample
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Chat Messages Log */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="max-w-3xl mx-auto space-y-6">
@@ -315,13 +363,19 @@ export default function OnboardingPage() {
 
               {isOnboardingFinished && (
                 <div className="flex justify-center py-6">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center max-w-sm shadow-md flex flex-col items-center gap-3">
-                    <Sparkles className="h-10 w-10 text-green-600 animate-bounce" />
+                  <div className="bg-white border border-green-100 rounded-3xl p-8 text-center max-w-md shadow-[0_12px_40px_rgba(34,197,94,0.06)] flex flex-col items-center gap-4">
+                    <div className="h-16 w-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 shadow-sm animate-bounce">
+                      <Sparkles className="h-8 w-8 text-green-500" />
+                    </div>
                     <div>
-                      <h3 className="font-extrabold text-green-800 text-lg">Your plan is ready!</h3>
-                      <p className="text-green-600 text-sm mt-1">
-                        Onboarding complete. Redirecting you to your marketing dashboard...
+                      <h3 className="font-black text-dark text-xl">Your dashboard is ready!</h3>
+                      <p className="text-subtle text-sm mt-2 leading-relaxed">
+                        Onboarding complete. We are generating your tailored marketing plan. Redirecting you in just a moment...
                       </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Finalizing setup...
                     </div>
                   </div>
                 </div>

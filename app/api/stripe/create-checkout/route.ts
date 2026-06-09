@@ -34,11 +34,22 @@ export async function POST(request: Request) {
       await updateUserSubscription(userId, { stripeCustomerId });
     }
 
-    // Get pricing variables from env
-    const priceId = process.env.STRIPE_PRICE_STARTER_INTRO;
+    // Get pricing variables from env based on selected plan
+    let plan = 'starter';
+    try {
+      const body = await request.json();
+      if (body && body.plan) {
+        plan = body.plan;
+      }
+    } catch (e) {
+      // Body might be empty or invalid JSON, default to starter
+    }
+
+    let priceId = plan === 'growth' ? process.env.STRIPE_PRICE_GROWTH : process.env.STRIPE_PRICE_STARTER_INTRO;
+
     if (!priceId) {
       return NextResponse.json(
-        { error: 'Stripe price ID for starter intro is not configured' },
+        { error: `Stripe price ID for ${plan} is not configured` },
         { status: 500 }
       );
     }

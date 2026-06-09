@@ -27,7 +27,7 @@ export default async function BlogListingPage() {
     .orderBy(desc(blogPosts.publishedAt));
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
       {/* Blog Header */}
       <div className="text-center max-w-3xl mx-auto mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-tint text-primary text-xs font-semibold uppercase tracking-wider mb-4">
@@ -48,7 +48,7 @@ export default async function BlogListingPage() {
           <p className="text-subtle text-base font-medium">No blog posts available at the moment. Check back soon!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
           {posts.map((post) => {
             const formattedDate = post.publishedAt
               ? new Date(post.publishedAt).toLocaleDateString(undefined, {
@@ -61,47 +61,47 @@ export default async function BlogListingPage() {
             return (
               <article
                 key={post.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-150 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg"
+                className="group bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-hidden border border-gray-100/50 flex flex-col hover:shadow-[0_20px_40px_rgba(232,98,26,0.06)] hover:border-primary/10 transition-all duration-500 transform hover:-translate-y-2"
               >
                 <div>
                   {/* Thumbnail */}
                   {post.ogImageUrl && (
-                    <div className="relative h-56 w-full overflow-hidden bg-gray-100">
+                    <div className="relative h-40 w-full overflow-hidden bg-gray-100">
                       <img
                         src={post.ogImageUrl || undefined}
                         alt={post.title || ''}
-                        className="object-cover w-full h-full"
+                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                       />
                     </div>
                   )}
 
                   {/* Card Content */}
-                  <div className="p-6 sm:p-8 space-y-4">
+                  <div className="p-5 sm:p-6 space-y-3">
                     <div className="flex items-center gap-2 text-xs font-medium text-subtle">
                       <Calendar className="h-4 w-4 text-primary" />
                       <time dateTime={post.publishedAt?.toISOString()}>{formattedDate}</time>
                     </div>
 
-                    <h2 className="text-2xl font-bold text-dark tracking-tight leading-snug hover:text-primary transition-colors">
+                    <h2 className="text-xl font-bold text-dark tracking-tight leading-snug group-hover:text-primary transition-colors duration-300">
                       <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                     </h2>
 
-                    <p className="text-subtle text-sm leading-relaxed line-clamp-3">
+                    <p className="text-subtle text-sm leading-relaxed line-clamp-2 mb-2">
                       {post.excerpt}
                     </p>
-                  </div>
-                </div>
 
-                <div className="p-6 sm:p-8 pt-0 border-t border-gray-100/50">
-                  <Link
-                    href={`/blog/${post.slug}`}
-                    className="inline-flex items-center gap-2 text-primary hover:text-[#C4531A] font-semibold text-sm transition-colors group"
-                    style={{ minHeight: '44px' }}
-                  >
-                    Read Full Article
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
+                    <div className="pt-2">
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className="inline-flex items-center gap-2 text-primary hover:text-[#C4531A] font-semibold text-sm transition-colors group/btn"
+                        style={{ minHeight: '36px' }}
+                      >
+                        Read Full Article
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </article>
             );

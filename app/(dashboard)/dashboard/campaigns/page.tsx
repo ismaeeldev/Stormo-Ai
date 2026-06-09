@@ -98,6 +98,7 @@ export default function CampaignsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
+    document.title = "Seasonal Campaign Planner | Stormo.io Dashboard";
     async function loadData() {
       try {
         const res = await fetch('/api/campaigns');

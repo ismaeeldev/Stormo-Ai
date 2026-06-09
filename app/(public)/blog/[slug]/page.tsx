@@ -92,7 +92,7 @@ export default async function BlogPostPage({ params }: Props) {
   );
 
   return (
-    <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16">
       {/* Back button */}
       <div className="mb-8">
         <Link
@@ -105,7 +105,8 @@ export default async function BlogPostPage({ params }: Props) {
         </Link>
       </div>
 
-      {/* Header */}
+      <article className="bg-white rounded-3xl p-6 sm:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.02)] border border-gray-100/50">
+        {/* Header */}
       <header className="space-y-4 mb-8">
         <div className="flex items-center gap-2 text-xs font-semibold text-subtle">
           <Calendar className="h-4 w-4 text-primary" />
@@ -190,5 +191,6 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
       </div>
     </article>
+  </div>
   );
 }

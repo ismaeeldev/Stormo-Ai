@@ -97,6 +97,7 @@ Output ONLY a JSON block containing the fields extracted (e.g., {"storeUrl": "..
           const stream = await model.stream(messages);
           let fullResponseText = '';
 
+          const completeRegex = /\{?\s*"?topicComplete"?\s*:\s*true\s*\}?/i;
           for await (const chunk of stream) {
             const token = typeof chunk.content === 'string'
               ? chunk.content
@@ -104,12 +105,10 @@ Output ONLY a JSON block containing the fields extracted (e.g., {"storeUrl": "..
               
             fullResponseText += token;
             
-            // Check if {"topicComplete": true} is in the text so far.
-            // If it starts appearing, we can strip it from the streamed response token
-            // so the user does not see raw JSON in the chat window.
+            // Strip the complete trigger if it starts appearing so user doesn't see raw JSON
             let cleanToken = token;
-            if (fullResponseText.includes('{"topicComplete": true}')) {
-              cleanToken = token.replace('{"topicComplete": true}', '').replace('{"topicComplete":', '').replace('true}', '');
+            if (completeRegex.test(fullResponseText)) {
+              cleanToken = token.replace(completeRegex, '').replace(/\{?\s*"?topicComplete"?\s*:\s*$/, '');
             }
 
             if (cleanToken) {
@@ -117,19 +116,22 @@ Output ONLY a JSON block containing the fields extracted (e.g., {"storeUrl": "..
             }
           }
 
-          // Check if topic is completed
-          const isComplete = fullResponseText.includes('{"topicComplete": true}');
+          // Check if topic is completed using regex
+          const isComplete = completeRegex.test(fullResponseText);
+          console.log(`[Onboarding Debug] isComplete: ${isComplete}, fullResponseText ending with: "${fullResponseText.substring(Math.max(0, fullResponseText.length - 80))}"`);
 
           if (isComplete) {
             let nextStep = currentTopic;
             if (currentTopic < 5) {
               nextStep = currentTopic + 1;
+              console.log(`[Onboarding Debug] Advancing database onboardingStep to ${nextStep} for user ${userId}`);
               await db
                 .update(users)
                 .set({ onboardingStep: nextStep, updatedAt: new Date() })
                 .where(eq(users.id, userId));
             } else if (currentTopic === 5) {
               // Mark onboarding as completed
+              console.log(`[Onboarding Debug] Onboarding complete. Marking onboardingCompleted = true for user ${userId}`);
               await db
                 .update(users)
                 .set({ onboardingCompleted: true, onboardingStep: 5, updatedAt: new Date() })

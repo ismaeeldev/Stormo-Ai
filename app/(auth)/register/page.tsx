@@ -18,6 +18,10 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
+  React.useEffect(() => {
+    document.title = "Create Account | Stormo.io";
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -86,44 +90,51 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-light-bg flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg border-t-3 border-primary p-8">
-        <div className="flex flex-col items-center mb-6">
-          <Link href="/" className="flex items-center gap-2 mb-2">
-            <Zap className="h-8 w-8 text-primary fill-primary" />
-            <span className="text-2xl font-bold text-dark">Stormo.io</span>
+    <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Decorative Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none select-none z-0"></div>
+
+      <div className="relative z-10 w-full max-w-md sm:max-w-xl bg-white rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.03)] border border-gray-100/60 overflow-hidden flex flex-col justify-between hover:shadow-[0_20px_50px_rgba(232,98,26,0.05)] hover:border-primary/10 transition-all duration-500">
+        {/* Dark Top Header */}
+        <div className="bg-[#1A1A1A] py-8 px-8 sm:px-10 flex flex-col items-center border-b border-white/5">
+          <Link href="/" className="flex items-center gap-2.5 mb-3 group">
+            <img src="/stormo-logo.png" alt="Stormo Logo" className="h-16 w-auto object-contain" />
           </Link>
-          <p className="text-subtle text-sm">Create your account to supercharge your SaaS marketing</p>
+          <p className="text-white/60 text-xs sm:text-sm text-center">Create your account to supercharge your SaaS marketing</p>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-destructive text-sm rounded-lg">
-            {error}
-          </div>
-        )}
+        {/* White Form Body */}
+        <div className="p-8 sm:p-10 bg-white flex-grow">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-destructive text-sm rounded-xl">
+              {error}
+            </div>
+          )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-dark mb-1">Name (Optional)</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full border-1.5 border-muted rounded-lg px-4 py-3 text-base text-dark bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
-              placeholder="John Doe"
-            />
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Name (Optional)</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-gray-200/80 rounded-xl px-4 py-3 text-base text-dark bg-white/50 placeholder-gray-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
+                placeholder="John Doe"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-dark mb-1">Email Address</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full border-1.5 border-muted rounded-lg px-4 py-3 text-base text-dark bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
-              placeholder="you@example.com"
-            />
+            <div>
+              <label className="block text-sm font-medium text-dark mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full border border-gray-200/80 rounded-xl px-4 py-3 text-base text-dark bg-white/50 placeholder-gray-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
+                placeholder="you@example.com"
+              />
+            </div>
           </div>
 
           <div>
@@ -134,7 +145,7 @@ export default function RegisterPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border-1.5 border-muted rounded-lg pl-4 pr-10 py-3 text-base text-dark bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
+                className="w-full border border-gray-200/80 rounded-xl pl-4 pr-10 py-3 text-base text-dark bg-white/50 placeholder-gray-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
                 placeholder="••••••••"
               />
               <button
@@ -154,7 +165,7 @@ export default function RegisterPage() {
               required
               checked={terms}
               onChange={(e) => setTerms(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-muted text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer"
+              className="mt-1 h-4 w-4 rounded border-gray-200 text-primary focus:ring-primary focus:ring-offset-0 cursor-pointer"
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-subtle cursor-pointer">
               I agree to the{' '}
@@ -171,7 +182,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isLoading || isGoogleLoading}
-            className="w-full bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-3 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-xl px-6 py-3.5 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-primary/25"
           >
             {isLoading ? (
               <>
@@ -186,17 +197,17 @@ export default function RegisterPage() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200"></div>
+            <div className="w-full border-t border-gray-100"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-subtle">Or sign up with</span>
+            <span className="bg-white px-3 text-subtle">Or sign up with</span>
           </div>
         </div>
 
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading || isGoogleLoading}
-          className="w-full flex items-center justify-center gap-2 border-1.5 border-muted hover:bg-orange-tint text-dark font-semibold rounded-lg px-6 py-3 transition-all cursor-pointer disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 border border-gray-200/80 bg-white hover:bg-gray-50 text-dark font-semibold rounded-xl px-6 py-3.5 transition-all cursor-pointer disabled:opacity-50"
         >
           {isGoogleLoading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -229,6 +240,7 @@ export default function RegisterPage() {
             Sign In
           </Link>
         </p>
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 const InstagramIcon = (props: any) => (
   <svg
@@ -48,15 +49,6 @@ interface PastWeek {
   items: ContentItem[];
 }
 
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  instagram: InstagramIcon,
-  email: Mail,
-  product_description: Tag,
-  blog: BookOpen,
-  pinterest: Compass,
-  reddit: FileText,
-};
-
 const LABEL_MAP: Record<string, string> = {
   instagram: 'Instagram Post',
   email: 'Outreach Email',
@@ -65,6 +57,25 @@ const LABEL_MAP: Record<string, string> = {
   pinterest: 'Pinterest Pin',
   reddit: 'Reddit Post',
 };
+
+function getOfficialBrandIconUrl(contentType: string): string {
+  switch (contentType.toLowerCase()) {
+    case 'instagram':
+      return 'https://cdn.simpleicons.org/instagram/E1306C';
+    case 'email':
+      return 'https://cdn.simpleicons.org/gmail/D44638';
+    case 'product_description':
+      return 'https://cdn.simpleicons.org/shopify/7AB55C';
+    case 'blog':
+      return 'https://cdn.simpleicons.org/wordpress/21759B';
+    case 'pinterest':
+      return 'https://cdn.simpleicons.org/pinterest/BD081C';
+    case 'reddit':
+      return 'https://cdn.simpleicons.org/reddit/FF4500';
+    default:
+      return 'https://cdn.simpleicons.org/gitbook/3884FF';
+  }
+}
 
 export default function MyContentPage() {
   const [loading, setLoading] = useState(true);
@@ -75,21 +86,49 @@ export default function MyContentPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    document.title = "My Content | Stormo.io Dashboard";
+    let isMounted = true;
+    let pollInterval: any = null;
+
     async function fetchData() {
       try {
         const res = await fetch('/api/content');
         if (res.ok) {
           const data = await res.json();
-          setCurrentWeek(data.currentWeek || []);
-          setPreviousWeeks(data.previousWeeks || []);
+          if (isMounted) {
+            const cur = data.currentWeek || [];
+            const prev = data.previousWeeks || [];
+            setCurrentWeek(cur);
+            setPreviousWeeks(prev);
+            
+            if (cur.length > 0 || prev.length > 0) {
+              if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+              }
+            } else {
+              if (!pollInterval) {
+                pollInterval = setInterval(fetchData, 4000);
+              }
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to fetch content:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
     fetchData();
+
+    return () => {
+      isMounted = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
   }, []);
 
   const toggleWeek = (weekStart: string) => {
@@ -148,17 +187,22 @@ export default function MyContentPage() {
   const ContentGrid = ({ items }: { items: ContentItem[] }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((item) => {
-        const Icon = ICON_MAP[item.contentType] || FileText;
+        const iconUrl = getOfficialBrandIconUrl(item.contentType);
         return (
           <div
             key={item.id}
             className="bg-white rounded-xl shadow-md border-t-3 border-primary p-5 flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-0.5 duration-200"
           >
             <div>
-              <div className="flex items-center gap-2 text-primary mb-3">
-                <Icon className="h-5 w-5" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  {LABEL_MAP[item.contentType] || item.contentType}
+              <div className="flex items-center gap-2 mb-3">
+                <img src={iconUrl} className="h-4.5 w-4.5 object-contain" alt={item.contentType} />
+                <span className="text-xs font-bold uppercase tracking-wider text-dark/70">
+                  {item.contentType === 'instagram' ? 'Instagram Post' :
+                   item.contentType === 'email' ? 'Outreach Email' :
+                   item.contentType === 'product_description' ? 'Product Description' :
+                   item.contentType === 'blog' ? 'Blog Outline' :
+                   item.contentType === 'pinterest' ? 'Pinterest Pin' :
+                   item.contentType === 'reddit' ? 'Reddit Post' : item.contentType}
                 </span>
               </div>
               <h3 className="font-bold text-dark text-base line-clamp-1 mb-2">
@@ -258,10 +302,8 @@ export default function MyContentPage() {
 
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-6 bg-light-bg">
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs min-h-[150px]">
-                <p className="text-dark text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                  {activeItem.content}
-                </p>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs min-h-[150px] text-dark text-sm leading-relaxed font-sans space-y-4">
+                <ReactMarkdown>{activeItem.content}</ReactMarkdown>
               </div>
             </div>
 

@@ -22,7 +22,7 @@ export default function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-white scroll-mt-20">
+    <section id="pricing" className="relative py-24 bg-white pb-24 sm:pb-32 md:pb-40 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Headline */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -37,7 +37,7 @@ export default function PricingSection() {
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
           {/* STARTER CARD (light gray bg) */}
-          <div className="bg-[#F5F5F5] rounded-2xl shadow-md border border-gray-150 p-8 sm:p-10 flex flex-col justify-between hover:shadow-lg transition-shadow">
+          <div className="group bg-[#F5F5F5] rounded-3xl shadow-md p-8 sm:p-10 flex flex-col justify-between hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2 border border-transparent">
             <div>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3.5 py-1 rounded-full">
@@ -48,7 +48,7 @@ export default function PricingSection() {
                 </span>
               </div>
               <div className="space-y-1 mb-6">
-                <h3 className="text-4xl font-black text-dark">$9</h3>
+                <h3 className="text-4xl font-black text-dark group-hover:text-primary transition-colors duration-300">$9</h3>
                 <p className="text-subtle text-xs uppercase font-bold tracking-wider">
                   First month introductory price, then $29/mo after
                 </p>
@@ -65,7 +65,7 @@ export default function PricingSection() {
             <div className="pt-8">
               <Link
                 href="/register"
-                className="bg-primary hover:bg-[#C4531A] text-white font-bold w-full py-3.5 rounded-lg shadow-md transition-colors block text-center"
+                className="bg-primary hover:bg-[#C4531A] text-white font-bold w-full py-3.5 rounded-lg shadow-md transition-all duration-200 block text-center transform group-hover:scale-[1.02]"
                 style={{ minHeight: '44px' }}
               >
                 Get Started with Starter
@@ -73,8 +73,8 @@ export default function PricingSection() {
             </div>
           </div>
 
-          {/* GROWTH CARD (#1A1A1A bg, orange top border 3px) */}
-          <div className="bg-[#1A1A1A] text-white rounded-2xl shadow-xl border-t-3 border-primary p-8 sm:p-10 flex flex-col justify-between hover:shadow-2xl transition-all transform hover:-translate-y-1">
+          {/* GROWTH CARD (#1A1A1A bg) */}
+          <div className="group bg-[#1A1A1A] text-white rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-white/5 p-8 sm:p-10 flex flex-col justify-between hover:shadow-[0_20px_50px_rgba(232,98,26,0.15)] hover:border-primary/30 transition-all duration-500 transform hover:-translate-y-2">
             <div>
               <div className="flex justify-between items-center mb-6">
                 <span className="text-xs font-bold uppercase tracking-wider text-white bg-white/10 px-3.5 py-1 rounded-full">
@@ -103,7 +103,7 @@ export default function PricingSection() {
             <div className="pt-8">
               <Link
                 href="/register"
-                className="bg-white hover:bg-[#FDF0E8] text-primary font-bold w-full py-3.5 rounded-lg shadow-md transition-colors block text-center"
+                className="bg-white hover:bg-[#FDF0E8] text-primary font-bold w-full py-3.5 rounded-lg shadow-md transition-all duration-200 block text-center transform group-hover:scale-[1.02]"
                 style={{ minHeight: '44px' }}
               >
                 Upgrade to Growth
@@ -111,6 +111,13 @@ export default function PricingSection() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Inverted Arch Divider */}
+      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[45px] md:h-[65px] fill-[#1A1A1A]">
+          <path d="M0,120 C400,20 800,20 1200,120 L1200,120 L0,120 Z" />
+        </svg>
       </div>
     </section>
   );

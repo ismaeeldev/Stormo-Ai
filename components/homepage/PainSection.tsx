@@ -21,7 +21,7 @@ export default function PainSection() {
   ];
 
   return (
-    <section className="py-24 bg-white">
+    <section className="relative py-24 bg-white pb-24 sm:pb-32 md:pb-40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Headline */}
         <div className="text-center max-w-3xl mx-auto mb-16">
@@ -36,11 +36,11 @@ export default function PainSection() {
         {/* Two-Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           {/* Without Stormo Card */}
-          <div className="bg-white rounded-xl shadow-md p-8 sm:p-10 border border-gray-150 flex flex-col justify-between hover:shadow-lg transition-shadow">
+          <div className="group bg-white rounded-2xl shadow-md p-8 sm:p-10 border border-gray-200/60 flex flex-col justify-between hover:shadow-xl hover:shadow-primary/5 hover:border-gray-300 transition-all duration-500 transform hover:-translate-y-2">
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-xs font-bold uppercase tracking-wider text-destructive bg-red-50 px-3 py-1 rounded-full">
-                  Without Stormo
+                   Without Stormo
                 </span>
               </div>
               <h3 className="text-xl font-bold text-dark mb-6">The Struggle of Solo Scaling</h3>
@@ -58,7 +58,7 @@ export default function PainSection() {
           </div>
 
           {/* With Stormo Card */}
-          <div className="bg-orange-tint rounded-xl shadow-md p-8 sm:p-10 border-2 border-primary flex flex-col justify-between hover:shadow-lg transition-all transform hover:-translate-y-1">
+          <div className="group bg-orange-tint/50 rounded-2xl shadow-md p-8 sm:p-10 border border-primary/30 flex flex-col justify-between hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 transition-all duration-500 transform hover:-translate-y-2.5">
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
@@ -79,6 +79,13 @@ export default function PainSection() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Slant Divider */}
+      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px] md:h-[60px] fill-[#F5F5F5]">
+          <path d="M1200 120L0 120 0 0z" />
+        </svg>
       </div>
     </section>
   );

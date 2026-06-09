@@ -34,6 +34,7 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    document.title = "Settings & Subscription | Stormo.io Dashboard";
     fetchSettingsData();
   }, []);
 

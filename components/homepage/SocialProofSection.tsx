@@ -24,7 +24,7 @@ export default function SocialProofSection() {
   ];
 
   return (
-    <section className="py-24 bg-[#1A1A1A] text-white text-center flex flex-col items-center">
+    <section className="relative py-24 bg-[#1A1A1A] text-white text-center flex flex-col items-center pb-24 sm:pb-32 md:pb-40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         {/* Testimonial Quote */}
         <div className="max-w-3xl mx-auto space-y-6">
@@ -74,6 +74,13 @@ export default function SocialProofSection() {
             <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
+      </div>
+
+      {/* Slant Divider */}
+      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[40px] md:h-[60px] fill-primary">
+          <path d="M1200 120L0 120 0 0z" />
+        </svg>
       </div>
     </section>
   );
