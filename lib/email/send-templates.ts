@@ -39,7 +39,7 @@ export async function sendVerificationEmail(to: string, link: string) {
 
   return sendEmail({
     to,
-    subject: 'Please verify your email',
+    subject: 'Verify your Stormo email address',
     html,
   });
 }

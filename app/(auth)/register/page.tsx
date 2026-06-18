@@ -69,7 +69,7 @@ export default function RegisterPage() {
         setError('Registered successfully, but failed to auto-login. Please login manually.');
         router.push('/login');
       } else {
-        router.push('/pricing');
+        router.push('/verify-email-required');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred. Please try again.');

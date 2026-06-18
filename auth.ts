@@ -10,6 +10,8 @@ declare module 'next-auth' {
       id: string;
       subscriptionTier: string;
       onboardingCompleted: boolean;
+      isEmailVerified: boolean;
+      provider: string;
     } & DefaultSession['user'];
   }
 
@@ -27,6 +29,8 @@ declare module 'next-auth/jwt' {
     userId?: string;
     subscriptionTier?: string;
     onboardingCompleted?: boolean;
+    isEmailVerified?: boolean;
+    provider?: string;
   }
 }
 
@@ -85,6 +89,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.userId = dbUser.id;
           token.subscriptionTier = dbUser.subscriptionTier ?? 'free';
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
+          token.isEmailVerified = dbUser.emailVerified ?? false;
+          token.provider = dbUser.provider ?? 'email';
         }
       }
       return token;
@@ -94,6 +100,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = (token.userId || token.sub) as string;
         session.user.subscriptionTier = (token.subscriptionTier || 'free') as string;
         session.user.onboardingCompleted = (token.onboardingCompleted || false) as boolean;
+        session.user.isEmailVerified = (token.isEmailVerified ?? false) as boolean;
+        session.user.provider = (token.provider || 'email') as string;
       }
       return session;
     },

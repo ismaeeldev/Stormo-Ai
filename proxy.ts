@@ -8,15 +8,29 @@ export default auth((req) => {
 
   const isDashboardRoute = pathname.startsWith('/dashboard');
   const isOnboardingRoute = pathname === '/onboarding';
+  const isStripeRoute = pathname.startsWith('/api/stripe/');
 
   if (!isLoggedIn) {
-    if (isDashboardRoute || isOnboardingRoute) {
+    if (isDashboardRoute || isOnboardingRoute || isStripeRoute) {
       return NextResponse.redirect(new URL('/login', nextUrl));
     }
     return NextResponse.next();
   }
 
-  // User is logged in
+  // ── Email verification gate ───────────────────────────────────────────────
+  // Only applies to email/password users — Google OAuth is already verified
+  const emailVerified = req.auth?.user?.isEmailVerified ?? false;
+  const provider = req.auth?.user?.provider ?? 'email';
+  const needsVerification = !emailVerified && provider === 'email';
+
+  if (needsVerification) {
+    if (isDashboardRoute || isOnboardingRoute || isStripeRoute) {
+      return NextResponse.redirect(new URL('/verify-email-required', nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  // ── Subscription gate ─────────────────────────────────────────────────────
   const subscriptionTier = req.auth?.user?.subscriptionTier;
   const onboardingCompleted = req.auth?.user?.onboardingCompleted;
   const hasActiveSubscription = subscriptionTier === 'starter' || subscriptionTier === 'growth';
@@ -28,7 +42,7 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
-  // User is logged in and has active subscription
+  // User is logged in, verified, and has active subscription
   if (isDashboardRoute && !onboardingCompleted) {
     return NextResponse.redirect(new URL('/onboarding', nextUrl));
   }
@@ -41,6 +55,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Match both dashboard routes and onboarding route to perform session redirections
-  matcher: ['/dashboard/:path*', '/onboarding'],
+  matcher: ['/dashboard/:path*', '/onboarding', '/api/stripe/:path*'],
 };

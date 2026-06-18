@@ -1,6 +1,6 @@
 // Stormo PWA Service Worker
 // Version bump this string to force all clients to get a fresh SW
-const CACHE_VERSION = 'stormo-v1';
+const CACHE_VERSION = 'stormo-v2';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL   = '/offline.html';
@@ -140,7 +140,7 @@ self.addEventListener('fetch', (event) => {
           if (cached) return cached;
           const offline = await caches.match(OFFLINE_URL);
           return offline ?? new Response(
-            '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Offline</title></head><body style="background:#1A1A1A;color:white;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;gap:16px"><p style="font-size:48px;font-weight:900;color:#E8621A">S</p><h1>You\'re Offline</h1><p style="color:#888">Stormo needs a connection to work.</p></body></html>',
+            '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Offline</title></head><body style="background:#1A1A1A;color:white;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;gap:16px"><img src="/favicon.png" style="width:72px;height:72px;object-fit:contain;border-radius:18px" alt="Stormo" /><h1>You\'re Offline</h1><p style="color:#888">Stormo needs a connection to work.</p></body></html>',
             { status: 503, headers: { 'Content-Type': 'text/html;charset=utf-8' } }
           );
         })

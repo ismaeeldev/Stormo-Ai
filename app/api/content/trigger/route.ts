@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { weeklyContentQueue } from '@/lib/jobs/queues';
 
 function getMondayOfCurrentWeek() {
   const today = new Date();
@@ -13,39 +12,26 @@ function getMondayOfCurrentWeek() {
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session || !session.user || !session.user.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json().catch(() => ({}));
-    const userId = body.userId || session.user.id;
-
     const weekStart = getMondayOfCurrentWeek();
     const contentTypes = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-    const jobPromises = contentTypes.map((contentType) =>
-      weeklyContentQueue.add(
-        'generate-weekly-content',
-        {
-          userId,
-          contentType,
-          weekStart,
-        },
-        {
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 60000, // 1 min backoff
-          },
-        }
-      )
-    );
-
-    await Promise.all(jobPromises);
+    // Fire-and-forget: each runs as an independent Vercel function invocation
+    contentTypes.forEach((contentType) => {
+      fetch(`${baseUrl}/api/content/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Cookie: request.headers.get('cookie') || '' },
+        body: JSON.stringify({ contentType, weekStart }),
+      }).catch(() => {});
+    });
 
     return NextResponse.json({
       success: true,
-      message: `Enqueued 6 content generation jobs for user ${userId} for week starting ${weekStart}`,
+      message: `Triggered 6 content generation jobs for week starting ${weekStart}`,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'An error occurred' }, { status: 500 });

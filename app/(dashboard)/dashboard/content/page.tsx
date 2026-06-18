@@ -140,6 +140,19 @@ export default function MyContentPage() {
     document.title = "My Content | Stormo.io Dashboard";
     let isMounted = true;
     let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let generationTriggered = false;
+
+    function triggerGeneration(weekStart: string) {
+      // Fire 6 parallel generation requests — each runs as an independent Vercel function invocation
+      const contentTypes = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
+      contentTypes.forEach((contentType) => {
+        fetch('/api/content/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contentType, weekStart }),
+        }).catch(() => {});
+      });
+    }
 
     async function fetchData() {
       try {
@@ -155,7 +168,13 @@ export default function MyContentPage() {
         setPreviousWeeks(prev);
         setOnboardingCompleted(onboarded);
 
-        // Keep polling until all content types are generated
+        // Trigger generation once if any content type is missing for this week
+        if (onboarded && cur.length < TOTAL_CONTENT_TYPES && !generationTriggered && data.currentWeekStart) {
+          generationTriggered = true;
+          triggerGeneration(data.currentWeekStart);
+        }
+
+        // Poll until all 6 pieces are ready
         const stillGenerating = onboarded && cur.length < TOTAL_CONTENT_TYPES;
         if (stillGenerating && !pollInterval) {
           pollInterval = setInterval(fetchData, 3000);
