@@ -27,6 +27,7 @@ export const viewport: Viewport = {
 
 // ── App Metadata ──────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://stormo.io'),
   title: {
     default: 'Stormo.io — AI Marketing Manager',
     template: '%s | Stormo.io',

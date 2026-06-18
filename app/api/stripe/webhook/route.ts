@@ -221,7 +221,7 @@ export async function POST(request: Request) {
             from_subscription: subscriptionId,
             end_behavior: 'release',
             phases: [
-              { items: [{ price: introPrice }], iterations: 1 },
+              { items: [{ price: introPrice }], duration: { interval: 'month', interval_count: 1 } },
               { items: [{ price: regularPrice }] },
             ],
           });
