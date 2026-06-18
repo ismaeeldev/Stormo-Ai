@@ -262,13 +262,25 @@ export async function POST(request: Request) {
           break;
         }
 
+        // Verify user actually exists in DB before touching subscriptions (FK constraint)
+        const [existingUser] = await db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+
+        if (!existingUser) {
+          console.error(`[Webhook] checkout.session.completed: userId ${userId} not found in users table — skipping`);
+          break;
+        }
+
         const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
         const priceId = sub.items.data[0]?.price.id;
         const introPrice = process.env.STRIPE_PRICE_STARTER_INTRO?.trim();
         const regularPrice = process.env.STRIPE_PRICE_STARTER?.trim();
         const tier = priceId === process.env.STRIPE_PRICE_GROWTH?.trim() ? 'growth' : 'starter';
 
-        // Update user subscription immediately
+        // Update user subscription
         await db
           .update(users)
           .set({
