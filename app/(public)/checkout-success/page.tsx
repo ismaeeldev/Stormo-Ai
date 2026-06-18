@@ -1,51 +1,54 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
-  const { data: session, update } = useSession();
-  const [attempts, setAttempts] = useState(0);
   const [ready, setReady] = useState(false);
+  const [dots, setDots] = useState('');
+  const attempts = useRef(0);
+
+  // Animated dots
+  useEffect(() => {
+    const t = setInterval(() => setDots((d) => (d.length >= 3 ? '' : d + '.')), 500);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
-    // If already showing active subscription from session, go immediately
-    const tier = (session?.user as any)?.subscriptionTier;
-    if (tier === 'starter' || tier === 'growth') {
-      setReady(true);
-      setTimeout(() => router.push('/onboarding'), 1500);
-      return;
-    }
+    const MAX = 25; // 50 seconds max
 
-    // Poll: refresh session every 2s until DB is updated (max 20 attempts = 40s)
-    const interval = setInterval(async () => {
-      setAttempts((n) => {
-        if (n >= 20) {
-          clearInterval(interval);
-          // Give up polling — send to onboarding anyway, proxy will show correct state
-          router.push('/onboarding');
-        }
-        return n + 1;
-      });
+    async function check() {
+      attempts.current += 1;
 
       try {
-        await update(); // re-fetches user from DB via JWT callback
-        const refreshed = (session?.user as any)?.subscriptionTier;
-        if (refreshed === 'starter' || refreshed === 'growth') {
-          clearInterval(interval);
-          setReady(true);
-          setTimeout(() => router.push('/onboarding'), 1500);
+        const res = await fetch('/api/subscription-check');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.active) {
+            setReady(true);
+            setTimeout(() => router.push('/onboarding'), 2000);
+            return;
+          }
         }
       } catch {
-        // silent
+        // network hiccup — keep retrying
       }
-    }, 2000);
 
-    return () => clearInterval(interval);
-  }, [session]);
+      if (attempts.current >= MAX) {
+        // Webhook took too long — redirect to pricing so user can see their status
+        router.push('/pricing?payment=pending');
+        return;
+      }
+
+      setTimeout(check, 2000);
+    }
+
+    // First check after 3s — give Stripe webhook time to fire
+    const t = setTimeout(check, 3000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] flex flex-col items-center justify-center p-6 text-white text-center gap-6">
@@ -57,15 +60,17 @@ export default function CheckoutSuccessPage() {
             <CheckCircle2 className="h-8 w-8 text-green-400" />
           </div>
           <h1 className="text-2xl font-bold">You're in!</h1>
-          <p className="text-white/50 text-sm">Taking you to your dashboard…</p>
+          <p className="text-white/50 text-sm">Setting up your dashboard…</p>
         </>
       ) : (
         <>
           <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
             <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
-          <h1 className="text-2xl font-bold">Setting up your account…</h1>
-          <p className="text-white/50 text-sm">This takes just a moment. Don't close this tab.</p>
+          <h1 className="text-2xl font-bold">Activating your account{dots}</h1>
+          <p className="text-white/50 text-sm max-w-xs">
+            Confirming your payment with Stripe. This takes a few seconds — don't close this tab.
+          </p>
         </>
       )}
     </div>

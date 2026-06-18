@@ -38,21 +38,43 @@ export async function POST(request: Request) {
       case 'customer.subscription.created': {
         const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
-        
-        // Find user by stripeCustomerId or metadata
-        const userId = subscription.metadata.userId;
+
+        console.log(`[Webhook] customer.subscription.created — customer: ${customerId}, sub: ${subscription.id}, metadata:`, subscription.metadata);
+
+        // 1. Try subscription metadata first
+        // 2. Fallback: look up user by stripeCustomerId in DB
+        // 3. Fallback: retrieve Stripe customer and use its metadata.userId
         let dbUser = null;
-        
-        if (userId) {
-          [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-        } else {
+        const subMetaUserId = subscription.metadata?.userId;
+
+        if (subMetaUserId) {
+          [dbUser] = await db.select().from(users).where(eq(users.id, subMetaUserId));
+        }
+
+        if (!dbUser) {
           [dbUser] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
         }
 
         if (!dbUser) {
-          console.error(`User not found for customer ID: ${customerId}`);
+          // Last resort: fetch Stripe customer metadata
+          try {
+            const customer = await stripe.customers.retrieve(customerId) as any;
+            const customerUserId = customer.metadata?.userId;
+            if (customerUserId) {
+              [dbUser] = await db.select().from(users).where(eq(users.id, customerUserId));
+            }
+          } catch (e) {
+            console.error(`[Webhook] Failed to retrieve Stripe customer ${customerId}:`, e);
+          }
+        }
+
+        if (!dbUser) {
+          console.error(`[Webhook] customer.subscription.created: user not found for customer ${customerId}`);
           break;
         }
+
+        console.log(`[Webhook] customer.subscription.created: matched user ${dbUser.id}`);
+
 
         // Determine subscription tier based on price ID
         const priceId = subscription.items.data[0]?.price.id;
@@ -110,17 +132,24 @@ export async function POST(request: Request) {
         const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
 
-        const userId = subscription.metadata.userId;
         let dbUser = null;
-
-        if (userId) {
-          [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-        } else {
+        if (subscription.metadata?.userId) {
+          [dbUser] = await db.select().from(users).where(eq(users.id, subscription.metadata.userId));
+        }
+        if (!dbUser) {
           [dbUser] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+        }
+        if (!dbUser) {
+          try {
+            const customer = await stripe.customers.retrieve(customerId) as any;
+            if (customer.metadata?.userId) {
+              [dbUser] = await db.select().from(users).where(eq(users.id, customer.metadata.userId));
+            }
+          } catch {}
         }
 
         if (!dbUser) {
-          console.error(`User not found for customer ID: ${customerId}`);
+          console.error(`[Webhook] customer.subscription.updated: user not found for customer ${customerId}`);
           break;
         }
 
@@ -161,16 +190,23 @@ export async function POST(request: Request) {
         const customerId = subscription.customer as string;
 
         let dbUser = null;
-        const userId = subscription.metadata.userId;
-
-        if (userId) {
-          [dbUser] = await db.select().from(users).where(eq(users.id, userId));
-        } else {
+        if (subscription.metadata?.userId) {
+          [dbUser] = await db.select().from(users).where(eq(users.id, subscription.metadata.userId));
+        }
+        if (!dbUser) {
           [dbUser] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
+        }
+        if (!dbUser) {
+          try {
+            const customer = await stripe.customers.retrieve(customerId) as any;
+            if (customer.metadata?.userId) {
+              [dbUser] = await db.select().from(users).where(eq(users.id, customer.metadata.userId));
+            }
+          } catch {}
         }
 
         if (!dbUser) {
-          console.error(`User not found for customer ID: ${customerId}`);
+          console.error(`[Webhook] customer.subscription.deleted: user not found for customer ${customerId}`);
           break;
         }
 
@@ -208,13 +244,21 @@ export async function POST(request: Request) {
 
       case 'checkout.session.completed': {
         const checkoutSession = event.data.object as Stripe.Checkout.Session;
-        const subscriptionId = checkoutSession.subscription as string;
-        if (!subscriptionId) break;
+        console.log(`[Webhook] checkout.session.completed — subscription: ${checkoutSession.subscription}, metadata:`, checkoutSession.metadata, 'client_ref:', checkoutSession.client_reference_id);
+
+        const subscriptionId = typeof checkoutSession.subscription === 'string'
+          ? checkoutSession.subscription
+          : (checkoutSession.subscription as any)?.id ?? null;
+
+        if (!subscriptionId) {
+          console.error('[Webhook] checkout.session.completed: no subscriptionId — skipping DB update');
+          break;
+        }
 
         // checkout.session has metadata.userId — more reliable than subscription metadata
         const userId = checkoutSession.metadata?.userId || checkoutSession.client_reference_id;
         if (!userId) {
-          console.error('[Stripe Webhook] checkout.session.completed: no userId in metadata');
+          console.error('[Webhook] checkout.session.completed: no userId in metadata or client_reference_id');
           break;
         }
 
