@@ -211,11 +211,57 @@ export async function POST(request: Request) {
         const subscriptionId = checkoutSession.subscription as string;
         if (!subscriptionId) break;
 
-        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        // checkout.session has metadata.userId — more reliable than subscription metadata
+        const userId = checkoutSession.metadata?.userId || checkoutSession.client_reference_id;
+        if (!userId) {
+          console.error('[Stripe Webhook] checkout.session.completed: no userId in metadata');
+          break;
+        }
+
+        const sub = await stripe.subscriptions.retrieve(subscriptionId) as any;
         const priceId = sub.items.data[0]?.price.id;
         const introPrice = process.env.STRIPE_PRICE_STARTER_INTRO?.trim();
         const regularPrice = process.env.STRIPE_PRICE_STARTER?.trim();
+        const tier = priceId === process.env.STRIPE_PRICE_GROWTH?.trim() ? 'growth' : 'starter';
 
+        // Update user subscription immediately
+        await db
+          .update(users)
+          .set({
+            subscriptionTier: tier,
+            subscriptionStatus: 'active',
+            subscriptionId: subscriptionId,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userId));
+
+        // Upsert into subscriptions table
+        await db
+          .insert(subscriptions)
+          .values({
+            userId,
+            stripeSubscriptionId: subscriptionId,
+            stripePriceId: priceId,
+            status: 'active',
+            currentPeriodStart: new Date(sub.current_period_start * 1000),
+            currentPeriodEnd: new Date(sub.current_period_end * 1000),
+            cancelAtPeriodEnd: sub.cancel_at_period_end,
+          })
+          .onConflictDoUpdate({
+            target: subscriptions.stripeSubscriptionId,
+            set: {
+              status: 'active',
+              stripePriceId: priceId,
+              currentPeriodStart: new Date(sub.current_period_start * 1000),
+              currentPeriodEnd: new Date(sub.current_period_end * 1000),
+              cancelAtPeriodEnd: sub.cancel_at_period_end,
+              updatedAt: new Date(),
+            },
+          });
+
+        console.log(`[Stripe Webhook] checkout.session.completed: subscription active for user ${userId}`);
+
+        // Set up intro→regular price schedule if applicable
         if (priceId === introPrice && regularPrice) {
           await stripe.subscriptionSchedules.create({
             from_subscription: subscriptionId,
