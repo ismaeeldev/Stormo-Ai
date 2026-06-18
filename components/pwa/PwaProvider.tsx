@@ -101,9 +101,7 @@ export default function PwaProvider() {
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden">
-              <img src="/favicon.png" alt="Stormo" className="h-8 w-8 object-contain" />
-            </div>
+            <img src="/favicon.png" alt="Stormo" className="h-10 w-10 object-contain flex-shrink-0" />
             <div>
               <p className="font-bold text-sm text-white leading-tight">Install Stormo</p>
               <p className="text-[11px] text-white/50 mt-0.5 leading-tight">
