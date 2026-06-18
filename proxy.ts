@@ -8,7 +8,8 @@ export default auth((req) => {
 
   const isDashboardRoute = pathname.startsWith('/dashboard');
   const isOnboardingRoute = pathname === '/onboarding';
-  const isStripeRoute = pathname.startsWith('/api/stripe/');
+  // Webhook is Stripe-server-to-server — no session cookie, must not be gated
+  const isStripeRoute = pathname.startsWith('/api/stripe/') && pathname !== '/api/stripe/webhook';
 
   if (!isLoggedIn) {
     if (isDashboardRoute || isOnboardingRoute || isStripeRoute) {
