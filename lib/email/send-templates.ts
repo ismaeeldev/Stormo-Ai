@@ -8,8 +8,12 @@ function loadTemplate(filename: string, replacements: Record<string, string>): s
   try {
     const filePath = path.join(process.cwd(), 'lib/email/templates', filename);
     let template = fs.readFileSync(filePath, 'utf8');
-    Object.keys(replacements).forEach((key) => {
-      template = template.split(`{${key}}`).join(replacements[key]);
+    const allReplacements = {
+      logoUrl: `${baseUrl}/stormo-logo.png`,
+      ...replacements,
+    };
+    Object.keys(allReplacements).forEach((key) => {
+      template = template.split(`{${key}}`).join(allReplacements[key]);
     });
     return template;
   } catch (err) {

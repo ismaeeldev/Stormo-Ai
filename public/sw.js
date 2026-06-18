@@ -1,6 +1,6 @@
 // Stormo PWA Service Worker
 // Version bump this string to force all clients to get a fresh SW
-const CACHE_VERSION = 'stormo-v2';
+const CACHE_VERSION = 'stormo-v3';
 const STATIC_CACHE  = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL   = '/offline.html';
@@ -11,7 +11,7 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/stormo-logo.png',
   '/favicon.png',
-  '/icons/icon.svg',
+  '/icons/web-app-manifest-192x192.png',
 ];
 
 // ── Install ───────────────────────────────────────────────────────────────────
@@ -159,8 +159,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || 'Stormo', {
       body: data.body || 'You have a new update.',
-      icon: '/icons/icon.svg',
-      badge: '/icons/icon.svg',
+      icon: '/icons/web-app-manifest-192x192.png',
+      badge: '/icons/favicon-96x96.png',
       tag: data.tag || 'stormo-push',
       renotify: false,
       data: { url: data.url || '/dashboard' },
