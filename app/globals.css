@@ -10,14 +10,48 @@
   --subtle: #666666;
   --orange-tint: #FDF0E8;
   --destructive: #DC2626;
+
+  /* iOS safe area insets — used for notch / Dynamic Island / home indicator.
+     Reference as: padding-top: env(safe-area-inset-top)
+     Only has values when viewport-fit=cover is set (set in layout.tsx). */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
 }
 
 html {
   scroll-behavior: smooth;
+  /* Prevent text size adjustment on orientation change on iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   font-family: 'Inter', sans-serif;
   color: var(--dark);
   background-color: var(--light-bg);
+  /* Smooth momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent overscroll bounce on the root body (per-scroll-container is fine) */
+  overscroll-behavior: none;
+}
+
+/* ── PWA standalone mode adjustments ───────────────────────────────────────── */
+/* When running as installed PWA (no browser chrome), add safe area padding to
+   the very top of fixed headers so content doesn't hide behind the status bar. */
+@media all and (display-mode: standalone) {
+  .pwa-safe-top    { padding-top: var(--safe-top); }
+  .pwa-safe-bottom { padding-bottom: var(--safe-bottom); }
+}
+
+/* Utility classes for safe area padding — use anywhere in the app */
+.safe-top    { padding-top:    var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+.safe-left   { padding-left:   var(--safe-left); }
+.safe-right  { padding-right:  var(--safe-right); }
+
+/* Remove tap highlight on interactive elements (iOS blue flash) */
+a, button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
 }

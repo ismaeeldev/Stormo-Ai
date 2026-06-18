@@ -127,6 +127,9 @@ export default async function BlogPostPage({ params }: Props) {
             src={post.ogImageUrl || undefined}
             alt={post.title || ''}
             className="object-cover w-full h-full"
+            loading="eager"
+            // @ts-ignore
+            fetchpriority="high"
           />
         </div>
       )}

@@ -20,6 +20,21 @@ import {
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+const DRAFT_MSGS = [
+  'Reading the influencer\'s profile and niche...',
+  'Personalizing the pitch for your store...',
+  'Writing a compelling cold-pitch opener...',
+  'Polishing the email for maximum response rate...',
+];
+
+const BULK_MSGS = [
+  'Parsing influencer handles...',
+  'Analyzing niche relevance for your store...',
+  'Estimating audience size and engagement...',
+  'Scoring each influencer for fit...',
+  'Finalizing results...',
+];
+
 function getOfficialPlatformIconUrl(platform: string): string {
   switch (platform.toLowerCase()) {
     case 'instagram':
@@ -99,7 +114,21 @@ export default function OutreachPage() {
   const [draftContactId, setDraftContactId] = useState('');
   const [draftContactName, setDraftContactName] = useState('');
   const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [draftMsgIdx, setDraftMsgIdx] = useState(0);
+  const [bulkMsgIdx, setBulkMsgIdx] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!generatingDraft) { setDraftMsgIdx(0); return; }
+    const t = setInterval(() => setDraftMsgIdx((i) => (i + 1) % DRAFT_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [generatingDraft]);
+
+  useEffect(() => {
+    if (!analyzingBulk) { setBulkMsgIdx(0); return; }
+    const t = setInterval(() => setBulkMsgIdx((i) => (i + 1) % BULK_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [analyzingBulk]);
 
   const fetchContacts = async () => {
     try {
@@ -647,7 +676,7 @@ export default function OutreachPage() {
               {generatingDraft ? (
                 <div className="h-44 flex flex-col items-center justify-center gap-3">
                   <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                  <p className="text-subtle text-xs">Stormo is crafting a personalized cold pitch...</p>
+                  <p className="text-subtle text-xs transition-all duration-300">{DRAFT_MSGS[draftMsgIdx]}</p>
                 </div>
               ) : (
                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm min-h-[120px] text-dark text-xs leading-relaxed font-sans space-y-3">
@@ -830,7 +859,7 @@ export default function OutreachPage() {
                 <div className="absolute inset-0 bg-white/75 flex flex-col justify-center items-center gap-3 animate-in fade-in duration-200">
                   <Loader2 className="h-10 w-10 text-primary animate-spin" />
                   <p className="text-dark font-bold text-sm">Analyzing handles with AI...</p>
-                  <p className="text-subtle text-xs">Stormo is gathering influencer data...</p>
+                  <p className="text-subtle text-xs transition-all duration-300">{BULK_MSGS[bulkMsgIdx]}</p>
                 </div>
               )}
             </div>

@@ -41,6 +41,7 @@ export const storeProfiles = pgTable('store_profiles', {
   nicheSummary: text('niche_summary'),
   coverageMap: jsonb('coverage_map'),
   campaigns: jsonb('campaigns'),
+  onboardingAnswers: jsonb('onboarding_answers'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

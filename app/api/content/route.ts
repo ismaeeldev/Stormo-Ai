@@ -39,36 +39,40 @@ export async function GET() {
         )
       );
 
-    // If no content for the current week exists, check if onboarding is complete and trigger generation in background
-    if (thisWeek.length === 0) {
-      const userResult = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+    let onboardingCompleted = false;
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
 
-      if (userResult.length > 0 && userResult[0].onboardingCompleted) {
-        const contentTypes = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
-        const jobPromises = contentTypes.map((contentType) =>
-          weeklyContentQueue.add(
-            'generate-weekly-content',
-            {
-              userId,
-              contentType,
-              weekStart: currentWeekStart,
+    if (userResult.length > 0) {
+      onboardingCompleted = !!userResult[0].onboardingCompleted;
+    }
+
+    // If no content for the current week exists, check if onboarding is complete and trigger generation in background
+    if (thisWeek.length === 0 && onboardingCompleted) {
+      const contentTypes = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
+      const jobPromises = contentTypes.map((contentType) =>
+        weeklyContentQueue.add(
+          'generate-weekly-content',
+          {
+            userId,
+            contentType,
+            weekStart: currentWeekStart,
+          },
+          {
+            jobId: `wc:${userId}:${contentType}:${currentWeekStart}`,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 60000,
             },
-            {
-              attempts: 3,
-              backoff: {
-                type: 'exponential',
-                delay: 60000,
-              },
-            }
-          )
-        );
-        await Promise.all(jobPromises);
-        console.log(`[Content Get API] Auto-enqueued 6 content generation jobs for user ${userId} for week starting ${currentWeekStart}`);
-      }
+          }
+        )
+      );
+      await Promise.all(jobPromises);
+      console.log(`[Content Get API] Auto-enqueued 6 content generation jobs for user ${userId} for week starting ${currentWeekStart}`);
     }
 
     // Fetch previous weeks' content
@@ -102,6 +106,7 @@ export async function GET() {
     return NextResponse.json({
       currentWeek: thisWeek,
       previousWeeks,
+      onboardingCompleted,
     });
   } catch (err: any) {
     console.error('[Content Get API] Error:', err);

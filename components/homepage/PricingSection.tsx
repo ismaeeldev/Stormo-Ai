@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Check, Star } from 'lucide-react';
+import { Check, Lock, Shield } from 'lucide-react';
 
 export default function PricingSection() {
   const starterFeatures = [
@@ -22,102 +22,136 @@ export default function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="relative py-24 bg-white pb-24 sm:pb-32 md:pb-40 scroll-mt-20">
+    <section id="pricing" className="relative py-24 bg-[#F8F9FA] pb-24 sm:pb-32 md:pb-40 scroll-mt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Headline */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-dark tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] tracking-tight">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-subtle text-base sm:text-lg mt-3">
+          <p className="text-[#666666] text-base sm:text-lg mt-3">
             No long-term contracts, no setup fees. Choose the tier that matches your store volume.
           </p>
         </div>
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch">
-          {/* STARTER CARD (light gray bg) */}
-          <div className="group bg-[#F5F5F5] rounded-3xl shadow-md p-8 sm:p-10 flex flex-col justify-between hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20 transition-all duration-500 transform hover:-translate-y-2 border border-transparent">
+          {/* STARTER CARD */}
+          <div className="group bg-white rounded-[2rem] border border-[#EBEBEB] p-8 sm:p-10 flex flex-col justify-between hover:shadow-xl transition-all duration-300 relative">
             <div>
+              {/* Badge */}
               <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 px-3.5 py-1 rounded-full">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary bg-[#FFF0EB] px-3.5 py-1.5 rounded-full">
                   Starter Tier
                 </span>
-                <span className="text-sm font-semibold text-subtle line-through">
-                  $29/mo
-                </span>
               </div>
-              <div className="space-y-1 mb-6">
-                <h3 className="text-4xl font-black text-dark group-hover:text-primary transition-colors duration-300">$9</h3>
-                <p className="text-subtle text-xs uppercase font-bold tracking-wider">
-                  First month introductory price, then $29/mo after
+
+              {/* Pricing Block */}
+              <div className="flex items-center gap-6 mb-6">
+                <div className="flex flex-col">
+                  <span className="text-5xl sm:text-6xl font-extrabold text-[#1A1A1A] tracking-tight">$9</span>
+                  <span className="text-sm sm:text-base font-bold text-primary mt-1">First 30 Days</span>
+                </div>
+
+                <div className="text-primary text-2xl font-light">→</div>
+
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-[#888888] uppercase tracking-wider mb-0.5">Then</span>
+                  <div className="flex items-baseline">
+                    <span className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A]">$29</span>
+                    <span className="text-sm font-semibold text-[#888888]">/mo</span>
+                  </div>
+                  <span className="text-xs text-[#888888] mt-0.5">Starting Month 2</span>
+                </div>
+              </div>
+
+              <div className="py-5 border-t border-b border-[#F0F0F0] mb-6">
+                <p className="text-sm text-[#4A4A4A] leading-relaxed">
+                  Start for just <strong>$9</strong> for your first 30 days. After that, it's <strong>$29</strong> per month.
                 </p>
               </div>
-              <ul className="space-y-4 pt-6 border-t border-gray-200">
+
+              {/* Features list */}
+              <ul className="space-y-4">
                 {starterFeatures.map((feat, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-sm text-dark font-medium">
-                    <Check className="h-4.5 w-4.5 text-primary flex-shrink-0" />
-                    {feat}
+                  <li key={idx} className="flex items-start gap-3 text-sm text-[#2D2D2D] font-medium leading-tight">
+                    <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
+
             <div className="pt-8">
               <Link
-                href="/register"
-                className="bg-primary hover:bg-[#C4531A] text-white font-bold w-full py-3.5 rounded-lg shadow-md transition-all duration-200 block text-center transform group-hover:scale-[1.02]"
-                style={{ minHeight: '44px' }}
+                href="/register?plan=starter"
+                className="bg-primary hover:bg-[#D45214] text-white font-bold w-full py-4 rounded-2xl shadow-md transition-all duration-200 block text-center transform hover:scale-[1.01]"
               >
                 Get Started with Starter
               </Link>
+              <div className="flex items-center justify-center gap-1.5 mt-4 text-xs text-[#888888]">
+                <Shield className="h-3.5 w-3.5" />
+                <span>Cancel anytime. No contracts. No hidden fees.</span>
+              </div>
             </div>
           </div>
 
-          {/* GROWTH CARD (#1A1A1A bg) */}
-          <div className="group bg-[#1A1A1A] text-white rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.15)] border border-white/5 p-8 sm:p-10 flex flex-col justify-between hover:shadow-[0_20px_50px_rgba(232,98,26,0.15)] hover:border-primary/30 transition-all duration-500 transform hover:-translate-y-2">
+          {/* GROWTH CARD */}
+          <div className="group bg-[#0B0B0C] text-white rounded-[2rem] border border-white/5 p-8 sm:p-10 flex flex-col justify-between hover:shadow-[0_20px_50px_rgba(232,98,26,0.15)] hover:border-primary/20 transition-all duration-300 relative">
             <div>
+              {/* Badge & Lock Label */}
               <div className="flex justify-between items-center mb-6">
-                <span className="text-xs font-bold uppercase tracking-wider text-white bg-white/10 px-3.5 py-1 rounded-full">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#A0A0A0] bg-[#1F1F21] px-3.5 py-1.5 rounded-full">
                   Growth Tier
                 </span>
-                <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full flex items-center gap-1.5">
-                  <Star className="h-3 w-3 fill-current" />
-                  Unlocked at 10 sales
+                <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+                  <Lock className="h-3.5 w-3.5 text-primary fill-primary/10" />
+                  Available after 10 sales
                 </span>
               </div>
-              <div className="space-y-1 mb-6">
-                <h3 className="text-4xl font-black text-white">$39</h3>
-                <p className="text-muted text-xs uppercase font-bold tracking-wider">
+
+              {/* Pricing Block */}
+              <div className="mb-6">
+                <span className="text-5xl sm:text-6xl font-extrabold text-white tracking-tight">$39</span>
+                <p className="text-[#888888] text-[10px] sm:text-xs font-bold tracking-wider uppercase mt-2">
                   Per month billing (billed automatically)
                 </p>
               </div>
-              <ul className="space-y-4 pt-6 border-t border-white/10">
+
+              <div className="py-5 border-t border-[#1F1F21] mb-6">
+                <p className="text-sm text-[#A0A0A0] leading-relaxed invisible h-5">
+                  {/* Empty spacer block to align cards vertically */}
+                </p>
+              </div>
+
+              {/* Features list */}
+              <ul className="space-y-4">
                 {growthFeatures.map((feat, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-sm text-white/95">
-                    <Check className="h-4.5 w-4.5 text-primary flex-shrink-0" />
-                    {feat}
+                  <li key={idx} className="flex items-start gap-3 text-sm text-[#E0E0E0] font-medium leading-tight">
+                    <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
+
             <div className="pt-8">
-              <Link
-                href="/register"
-                className="bg-white hover:bg-[#FDF0E8] text-primary font-bold w-full py-3.5 rounded-lg shadow-md transition-all duration-200 block text-center transform group-hover:scale-[1.02]"
-                style={{ minHeight: '44px' }}
+              <button
+                disabled
+                className="bg-white text-primary font-bold w-full py-4 rounded-2xl transition-all duration-200 flex items-center justify-center gap-2 cursor-not-allowed opacity-90"
               >
-                Upgrade to Growth
-              </Link>
+                <Lock className="h-4 w-4 text-primary" />
+                Available after 10 sales
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Inverted Arch Divider */}
-      <div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-10">
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-full h-[45px] md:h-[65px] fill-[#1A1A1A]">
-          <path d="M0,120 C400,20 800,20 1200,120 L1200,120 L0,120 Z" />
-        </svg>
+        {/* Footer info text */}
+        <div className="mt-12 flex items-center justify-center gap-2 text-sm text-[#666666] font-semibold">
+          <Shield className="h-4 w-4 text-primary" />
+          <span>No contracts. No hidden fees. Cancel anytime.</span>
+        </div>
       </div>
     </section>
   );

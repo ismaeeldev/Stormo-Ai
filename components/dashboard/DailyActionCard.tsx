@@ -3,6 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2, Clipboard, ClipboardCheck, Check, CalendarDays, HelpCircle, X } from 'lucide-react';
 
+const LOADING_MSGS = [
+  'Evaluating your marketing channel history...',
+  'Checking for duplicate action patterns...',
+  'Reviewing your niche and target audience...',
+  'Selecting the highest-impact action for today...',
+  'Preparing your copy template...',
+];
+
 interface Action {
   id: string;
   title: string;
@@ -18,10 +26,17 @@ export default function DailyActionCard() {
   const [action, setAction] = useState<Action | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCopied, setIsCopied] = useState(false);
-  
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isLoading) { setLoadingMsgIdx(0); return; }
+    const t = setInterval(() => setLoadingMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [isLoading]);
 
   const fetchTodayAction = async () => {
     try {
@@ -127,9 +142,9 @@ export default function DailyActionCard() {
       <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary overflow-hidden min-h-[350px] flex flex-col justify-center items-center p-8 text-center space-y-4">
         <Loader2 className="h-10 w-10 text-primary animate-spin" />
         <div>
-          <h3 className="font-bold text-dark text-lg">Loading daily action...</h3>
-          <p className="text-subtle text-sm mt-1 max-w-sm">
-            Evaluating e-commerce footprint, channel mappings, and historical contexts.
+          <h3 className="font-bold text-dark text-lg">Building today's action...</h3>
+          <p className="text-subtle text-sm mt-1 max-w-sm transition-all duration-300">
+            {LOADING_MSGS[loadingMsgIdx]}
           </p>
         </div>
       </div>

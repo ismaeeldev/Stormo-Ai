@@ -1,6 +1,7 @@
 import { Worker } from 'bullmq';
 import { db } from '../../db';
 import { weeklyContent } from '../../db/schema';
+import { eq, and } from 'drizzle-orm';
 import { getStoreProfile } from '../../db/queries';
 import {
   generateInstagramPost,
@@ -45,6 +46,24 @@ export const weeklyContentWorker = new Worker(
       const generator = GENERATORS[contentType];
       if (!generator) {
         throw new Error(`Unsupported content type: ${contentType}`);
+      }
+
+      // Guard against duplicates — skip if this type already exists for the week
+      const existing = await db
+        .select({ id: weeklyContent.id })
+        .from(weeklyContent)
+        .where(
+          and(
+            eq(weeklyContent.userId, userId),
+            eq(weeklyContent.contentType, contentType),
+            eq(weeklyContent.weekStart, weekStart)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        console.log(`[Weekly Content Worker] ${contentType} already saved for user ${userId} — skipping`);
+        return;
       }
 
       console.log(`[Weekly Content Worker] Generating ${contentType} for user ${userId}`);

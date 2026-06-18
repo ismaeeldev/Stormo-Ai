@@ -58,6 +58,56 @@ const LABEL_MAP: Record<string, string> = {
   reddit: 'Reddit Post',
 };
 
+const TOTAL_CONTENT_TYPES = 6;
+const ALL_CONTENT_TYPES = ['instagram', 'reddit', 'email', 'product_description', 'pinterest', 'blog'];
+const CONTENT_TYPE_SHORT: Record<string, string> = {
+  instagram: 'Instagram',
+  reddit: 'Reddit',
+  email: 'Email',
+  product_description: 'Product Desc.',
+  pinterest: 'Pinterest',
+  blog: 'Blog',
+};
+
+function GeneratingBanner({ generatedTypes }: { generatedTypes: Set<string> }) {
+  const readyCount = generatedTypes.size;
+  return (
+    <div className="bg-white rounded-xl shadow-md border-t-4 border-primary p-5 space-y-4">
+      <div className="flex items-center gap-3">
+        <Loader2 className="h-5 w-5 text-primary animate-spin flex-shrink-0" />
+        <div>
+          <h3 className="font-bold text-dark">Generating your weekly content...</h3>
+          <p className="text-subtle text-xs mt-0.5">
+            {readyCount} of {TOTAL_CONTENT_TYPES} pieces ready — new pieces appear automatically, no need to refresh
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {ALL_CONTENT_TYPES.map((type) => {
+          const done = generatedTypes.has(type);
+          return (
+            <span
+              key={type}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-300 ${
+                done
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-400'
+              }`}
+            >
+              {done ? (
+                <Check className="h-3 w-3" />
+              ) : (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              )}
+              {CONTENT_TYPE_SHORT[type]}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function getOfficialBrandIconUrl(contentType: string): string {
   switch (contentType.toLowerCase()) {
     case 'instagram':
@@ -84,50 +134,47 @@ export default function MyContentPage() {
   const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
   const [activeItem, setActiveItem] = useState<ContentItem | null>(null);
   const [copied, setCopied] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(true);
 
   useEffect(() => {
     document.title = "My Content | Stormo.io Dashboard";
     let isMounted = true;
-    let pollInterval: any = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     async function fetchData() {
       try {
         const res = await fetch('/api/content');
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            const cur = data.currentWeek || [];
-            const prev = data.previousWeeks || [];
-            setCurrentWeek(cur);
-            setPreviousWeeks(prev);
-            
-            if (cur.length > 0 || prev.length > 0) {
-              if (pollInterval) {
-                clearInterval(pollInterval);
-                pollInterval = null;
-              }
-            } else {
-              if (!pollInterval) {
-                pollInterval = setInterval(fetchData, 4000);
-              }
-            }
-          }
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isMounted) return;
+
+        const cur: ContentItem[] = data.currentWeek || [];
+        const prev: PastWeek[] = data.previousWeeks || [];
+        const onboarded: boolean = data.onboardingCompleted ?? true;
+        setCurrentWeek(cur);
+        setPreviousWeeks(prev);
+        setOnboardingCompleted(onboarded);
+
+        // Keep polling until all content types are generated
+        const stillGenerating = onboarded && cur.length < TOTAL_CONTENT_TYPES;
+        if (stillGenerating && !pollInterval) {
+          pollInterval = setInterval(fetchData, 3000);
+        } else if (!stillGenerating && pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
         }
       } catch (err) {
         console.error('Failed to fetch content:', err);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     }
+
     fetchData();
 
     return () => {
       isMounted = false;
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, []);
 
@@ -157,24 +204,37 @@ export default function MyContentPage() {
     );
   }
 
-  // If no content generated yet
-  if (currentWeek.length === 0 && previousWeeks.length === 0) {
+  // If onboarding is not completed
+  if (!onboardingCompleted) {
     return (
       <div className="space-y-6 max-w-5xl mx-auto px-4">
         <div>
           <h1 className="text-3xl font-bold text-dark">My Content</h1>
           <p className="text-subtle text-sm mt-1">Review and manage your generated weekly marketing material</p>
         </div>
-        <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary p-12 text-center flex flex-col items-center justify-center space-y-4 min-h-[350px]">
-          <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <h2 className="text-xl font-bold text-dark">Your content is being generated...</h2>
+        <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary p-12 text-center flex flex-col items-center justify-center space-y-5 min-h-[350px]">
+          <div className="h-14 w-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+            <svg className="h-7 w-7 text-primary fill-none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-dark">Setup Profile Required</h2>
           <p className="text-subtle text-sm max-w-md">
-            Our AI engine is crafting tailored social copy, emails, blog outlines, and description assets for your store. This usually takes less than a minute.
+            Before we can generate tailored marketing copies, blog outlines, and email campaigns for your store, you need to complete your store profile onboarding.
           </p>
+          <a
+            href="/onboarding"
+            className="inline-flex items-center justify-center bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-3 text-sm shadow-md transition-all cursor-pointer transform hover:-translate-y-0.5"
+          >
+            Complete Onboarding &rarr;
+          </a>
         </div>
       </div>
     );
   }
+
+  const isGenerating = onboardingCompleted && currentWeek.length < TOTAL_CONTENT_TYPES;
+  const generatedTypes = new Set(currentWeek.map((item) => item.contentType));
 
   const formatWeekRange = (weekStartStr: string) => {
     const start = new Date(weekStartStr);
@@ -233,6 +293,9 @@ export default function MyContentPage() {
         <h1 className="text-3xl font-bold text-dark">My Content</h1>
         <p className="text-subtle text-sm mt-1">Review and manage your generated weekly marketing material</p>
       </div>
+
+      {/* Live generation progress banner */}
+      {isGenerating && <GeneratingBanner generatedTypes={generatedTypes} />}
 
       {/* This Week's Content */}
       {currentWeek.length > 0 && (

@@ -52,6 +52,14 @@ const MONTH_DATA = [
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const CAMPAIGN_MSGS = [
+  'Matching your niche with the seasonal theme...',
+  'Mapping your target customer to this event...',
+  'Building your 3-day content calendar...',
+  'Crafting campaign-specific content ideas...',
+  'Finalizing recommendations for your store...',
+];
+
 function getPreSuggestedEvents(productType: string = '') {
   const type = productType.toLowerCase();
   const suggestions: string[] = [];
@@ -96,6 +104,13 @@ export default function CampaignsPage() {
   const [generatedPlan, setGeneratedPlan] = useState<CampaignPlan | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [campaignMsgIdx, setCampaignMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (!generating) { setCampaignMsgIdx(0); return; }
+    const t = setInterval(() => setCampaignMsgIdx((i) => (i + 1) % CAMPAIGN_MSGS.length), 1800);
+    return () => clearInterval(t);
+  }, [generating]);
 
   useEffect(() => {
     document.title = "Seasonal Campaign Planner | Stormo.io Dashboard";
@@ -381,7 +396,7 @@ export default function CampaignsPage() {
                 <div className="text-center py-16 space-y-3 bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
                   <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto" />
                   <h3 className="font-bold text-dark text-base">Crafting Campaign Recommendations...</h3>
-                  <p className="text-subtle text-xs">Stormo is matching your target customer with the seasonal theme...</p>
+                  <p className="text-subtle text-xs transition-all duration-300">{CAMPAIGN_MSGS[campaignMsgIdx]}</p>
                 </div>
               ) : generatedPlan ? (
                 /* DISPLAY GENERATED CAMPAIGN RESULTS */

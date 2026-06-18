@@ -95,6 +95,9 @@ Price Range: ${profile?.priceRange || "N/A"}
 Challenges: ${profile?.currentChallenges || "N/A"}
 Store Analysis/Niche Summary: ${profile?.storeAnalysis || profile?.nicheSummary || "N/A"}
 
+=== DETAILED ONBOARDING QUESTIONNAIRE ANSWERS ===
+${profile?.onboardingAnswers ? JSON.stringify(profile.onboardingAnswers, null, 2) : "N/A"}
+
 === MARKETING CHANNEL COVERAGE ===
 ${JSON.stringify(coverageMap, null, 2)}
 

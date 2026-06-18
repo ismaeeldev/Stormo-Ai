@@ -49,14 +49,21 @@ export default function HomepageNavbar() {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <img src="/stormo-logo.png" alt="Stormo Logo" className="h-12 sm:h-16 md:h-20 w-auto object-contain" />
+              <img 
+                src="/stormo-logo.png" 
+                alt="Stormo Logo" 
+                className="h-12 sm:h-16 md:h-20 w-auto object-contain" 
+                loading="eager"
+                // @ts-ignore
+                fetchpriority="high"
+              />
             </Link>
           </div>
 
           {/* Center Links */}
           <div className="hidden md:flex items-center gap-8">
             <a
-              href={isHome ? "#how-it-works" : "/#how-it-works"}
+              href={isHome ? "#how-it-works" : "/how-it-works"}
               onClick={(e) => handleSmoothScroll(e, 'how-it-works')}
               className="text-sm font-medium text-muted hover:text-white transition-colors"
             >
@@ -75,11 +82,19 @@ export default function HomepageNavbar() {
             >
               Blog
             </Link>
+            <Link
+              href="/faq"
+              className="text-sm font-medium text-muted hover:text-white transition-colors"
+            >
+              FAQ
+            </Link>
           </div>
 
           {/* CTA Right */}
           <div className="hidden md:flex items-center gap-4">
-            {status === 'authenticated' ? (
+            {status === 'loading' ? (
+              <div className="h-10 w-28 bg-white/10 rounded-lg animate-pulse" />
+            ) : status === 'authenticated' ? (
               <Link
                 href="/dashboard"
                 className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-all duration-200 shadow-md hover:shadow-primary/20 transform hover:-translate-y-0.5"
@@ -153,7 +168,7 @@ export default function HomepageNavbar() {
 
             <nav className="flex-1 space-y-3">
               <a
-                href={isHome ? "#how-it-works" : "/#how-it-works"}
+                href={isHome ? "#how-it-works" : "/how-it-works"}
                 onClick={(e) => handleSmoothScroll(e, 'how-it-works')}
                 className="block px-4 py-3 rounded-lg text-base font-medium text-muted hover:text-white hover:bg-white/5 transition-colors"
               >
@@ -173,7 +188,16 @@ export default function HomepageNavbar() {
               >
                 Blog
               </Link>
-              {status === 'authenticated' ? (
+              <Link
+                href="/faq"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-3 rounded-lg text-base font-medium text-muted hover:text-white hover:bg-white/5 transition-colors"
+              >
+                FAQ
+              </Link>
+              {status === 'loading' ? (
+                <div className="h-10 w-full bg-white/5 rounded-lg animate-pulse" />
+              ) : status === 'authenticated' ? (
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileOpen(false)}
@@ -193,7 +217,9 @@ export default function HomepageNavbar() {
             </nav>
 
             <div className="pt-6 border-t border-white/10 mt-auto">
-              {status === 'authenticated' ? (
+              {status === 'loading' ? (
+                <div className="h-10 w-full bg-white/5 rounded-lg animate-pulse" />
+              ) : status === 'authenticated' ? (
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileOpen(false)}

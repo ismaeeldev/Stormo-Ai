@@ -9,6 +9,13 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'The Stormo Blog | Marketing Tactics for Ecommerce Store Owners',
   description: 'Discover actionable marketing guides, organic growth strategies, micro-influencer outreach tips, and tactics to get your first 100 ecommerce customers.',
+  openGraph: {
+    title: 'The Stormo Blog | Marketing Tactics for Ecommerce Store Owners',
+    description: 'Discover actionable marketing guides, organic growth strategies, micro-influencer outreach tips, and tactics to get your first 100 ecommerce customers.',
+    images: [{ url: '/og-image.png' }],
+    url: 'https://stormo.io/blog',
+    type: 'website',
+  },
 };
 
 export default async function BlogListingPage() {

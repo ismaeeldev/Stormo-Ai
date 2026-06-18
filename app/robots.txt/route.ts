@@ -2,7 +2,7 @@ export function GET() {
   const robots = `User-agent: *
 Allow: /
 
-Sitemap: https://stormo.io/api/sitemap.xml`.trim();
+Sitemap: https://stormo.io/sitemap.xml`.trim();
 
   return new Response(robots, {
     headers: {

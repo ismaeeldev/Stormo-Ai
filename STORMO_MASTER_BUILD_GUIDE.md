@@ -1808,6 +1808,100 @@ Use any future expiry date and any 3-digit CVC.
 
 ---
 
+# 📱 PWA SETUP GUIDE
+
+> Complete after Section 16 deployment, or in parallel during development.
+> The code is already wired — you only need to generate the icon/splash PNG files.
+
+---
+
+## What's already built (in code)
+
+| File | Purpose |
+|---|---|
+| `public/manifest.json` | Web App Manifest (name, colors, icons, shortcuts) |
+| `public/sw.js` | Service Worker: offline support, asset caching |
+| `public/offline.html` | Branded offline fallback page |
+| `public/icons/icon.svg` | SVG app icon (any size, no blur) |
+| `public/icons/maskable-icon.svg` | Maskable icon for Android adaptive icons |
+| `components/pwa/PwaProvider.tsx` | SW registration + install banner (Android + iOS) |
+| `app/layout.tsx` | All PWA meta tags (Apple, theme-color, manifest link) |
+| `next.config.ts` | Headers: SW never cached, correct MIME type for manifest |
+| `app/globals.css` | Safe area CSS variables, tap highlight removed |
+
+---
+
+## PNG Icons you must generate (one-time task)
+
+Export your Stormo logo at these exact sizes and save in `public/icons/`:
+
+| Filename | Size | Used for |
+|---|---|---|
+| `icon-72.png` | 72×72 | Android legacy |
+| `icon-96.png` | 96×96 | Shortcut icons in manifest |
+| `icon-128.png` | 128×128 | Chrome Web Store |
+| `icon-144.png` | 144×144 | Windows tile |
+| `icon-152.png` | 152×152 | iPad home screen (iOS) |
+| `icon-180.png` | 180×180 | iPhone home screen (iOS) — also `apple-touch-icon-180.png` |
+| `icon-192.png` | 192×192 | Android home screen |
+| `icon-512.png` | 512×512 | Android splash / Play Store |
+| `maskable-192.png` | 192×192 | Android adaptive icon (square, add 20% padding around logo) |
+| `maskable-512.png` | 512×512 | Android adaptive icon large |
+| `apple-touch-icon-180.png` | 180×180 | Safari "Add to Home Screen" icon |
+| `apple-touch-icon-152.png` | 152×152 | iPad retina |
+| `apple-touch-icon-120.png` | 120×120 | iPhone Retina |
+| `apple-touch-icon-76.png` | 76×76 | iPad non-retina |
+
+**Easiest way:** Go to **https://realfavicongenerator.net** → upload `stormo-logo.png` → download the package → copy the PNG files into `public/icons/`.
+
+---
+
+## iOS Splash Screens (optional but recommended)
+
+Safari uses `apple-touch-startup-image` links for the loading screen when the PWA launches. These are referenced in `app/layout.tsx` (`appleWebApp.startupImage`). You need to create these PNG files:
+
+| Filename | Resolution | Device |
+|---|---|---|
+| `apple-splash-1290x2796.png` | 1290×2796 | iPhone 15 Pro Max |
+| `apple-splash-1170x2532.png` | 1170×2532 | iPhone 15 / 14 / 13 |
+| `apple-splash-750x1334.png` | 750×1334 | iPhone SE |
+| `apple-splash-2048x2732.png` | 2048×2732 | iPad Pro 12.9" |
+| `apple-splash-1668x2388.png` | 1668×2388 | iPad Pro 11" / Air |
+
+Save all files in `public/splash/`.
+
+**Easiest way:** Use **https://progressier.com/pwa-icons-and-ios-splash-screen-generator** — upload your logo, set background color `#1A1A1A`, download all splash screens.
+
+If you skip this step: iOS will show a plain white screen for ~0.3s on launch. Not a blocker.
+
+---
+
+## iOS-specific behaviour notes (from Stormo PWA iOS Technical Guide)
+
+| Behaviour | Detail |
+|---|---|
+| Install prompt | iOS has NO automatic install banner. The `PwaProvider` shows manual step-by-step instructions after 4 seconds. |
+| Status bar | Set to `black-translucent` — content extends behind the status bar. Add `padding-top: var(--safe-top)` to any fixed header. |
+| Notch / Dynamic Island | `viewport-fit=cover` is set. Use `.safe-top` CSS class on fixed headers. |
+| Safari only | On iOS, only Safari can install PWAs. Chrome/Firefox on iOS cannot. |
+| Service worker limits (iOS < 16.4) | No push notifications, no background sync. Works fine from iOS 16.4+. |
+| Standalone detection | `window.navigator.standalone === true` on iOS. Use this to hide browser-only UI. |
+| Tap flash | Removed globally via `-webkit-tap-highlight-color: transparent` in globals.css. |
+
+---
+
+## Testing checklist
+
+- [ ] Chrome DevTools → Application → Manifest — shows all fields, icons load
+- [ ] Chrome DevTools → Application → Service Workers — shows SW registered, status = activated
+- [ ] Chrome DevTools → Lighthouse → PWA audit — score ≥ 90
+- [ ] Android Chrome: "Add to Home Screen" prompt appears → install works → app opens in standalone mode (no browser chrome)
+- [ ] iOS Safari: Share button → "Add to Home Screen" → app opens in standalone mode
+- [ ] Go offline → navigate to `/dashboard` → branded offline page appears
+- [ ] Status bar on iPhone (standalone mode): content doesn't hide behind notch
+
+---
+
 # ✅ FINAL CHECKLIST REPORT
 
 > Use this to verify every feature has been built before going live.

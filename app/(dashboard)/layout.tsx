@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex-1 space-y-1 px-4 py-4">
+    <nav className="flex-1 space-y-1 px-4 py-4 overflow-y-auto">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;

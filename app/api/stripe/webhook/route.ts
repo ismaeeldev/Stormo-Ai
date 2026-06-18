@@ -206,6 +206,30 @@ export async function POST(request: Request) {
         break;
       }
 
+      case 'checkout.session.completed': {
+        const checkoutSession = event.data.object as Stripe.Checkout.Session;
+        const subscriptionId = checkoutSession.subscription as string;
+        if (!subscriptionId) break;
+
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const priceId = sub.items.data[0]?.price.id;
+        const introPrice = process.env.STRIPE_PRICE_STARTER_INTRO?.trim();
+        const regularPrice = process.env.STRIPE_PRICE_STARTER?.trim();
+
+        if (priceId === introPrice && regularPrice) {
+          await stripe.subscriptionSchedules.create({
+            from_subscription: subscriptionId,
+            end_behavior: 'release',
+            phases: [
+              { items: [{ price: introPrice }], iterations: 1 },
+              { items: [{ price: regularPrice }] },
+            ],
+          });
+          console.log(`[Stripe Webhook] Intro→Regular schedule created for subscription ${subscriptionId}`);
+        }
+        break;
+      }
+
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
         console.log(`[Stripe Webhook] Invoice payment succeeded: ${invoice.id} for customer ${invoice.customer}`);
