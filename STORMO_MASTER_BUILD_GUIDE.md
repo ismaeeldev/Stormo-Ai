@@ -100,7 +100,22 @@
    - `STRIPE_PRICE_STARTER_INTRO`
    - `STRIPE_PRICE_STARTER`
    - `STRIPE_PRICE_GROWTH`
-6. Webhook secret — set up AFTER deployment (see Section 3.3)
+6. **Webhook setup (after deployment):**
+   - Stripe Dashboard → **Developers → Webhooks → Add endpoint**
+   - Endpoint URL: `https://stormo-ai.vercel.app/api/stripe/webhook`
+   - Click **Select events** → add all 6:
+
+   | Event | Purpose |
+   |---|---|
+   | `checkout.session.completed` | Triggers $9 → $29 subscription schedule after first payment |
+   | `customer.subscription.created` | Sets user tier to `starter` or `growth` in DB |
+   | `customer.subscription.updated` | Handles upgrades, cancellations, status changes |
+   | `customer.subscription.deleted` | Downgrades user to `free` when subscription ends |
+   | `invoice.payment_succeeded` | Logs successful recurring payments |
+   | `invoice.payment_failed` | Flags past-due subscriptions |
+
+   - Click **Add endpoint** → copy the **Signing secret** (`whsec_...`)
+   - Add to Vercel: Settings → Environment Variables → `STRIPE_WEBHOOK_SECRET` = `whsec_...`
 
 **✅ Test ACC-4:** 3 Price IDs saved. Both API keys saved.
 
@@ -1786,8 +1801,9 @@ The $9 intro price has two approaches. Use **Approach A** (simpler):
 
 ## Step 6: Set Up Webhooks (Production — after deployment)
 - Stripe Dashboard → **Developers → Webhooks → Add endpoint**
-- Endpoint URL: `https://stormo.io/api/stripe/webhook`
-- Events to select:
+- Endpoint URL: `https://stormo-ai.vercel.app/api/stripe/webhook`
+- Events to select (all 6 required):
+  - `checkout.session.completed`
   - `customer.subscription.created`
   - `customer.subscription.updated`
   - `customer.subscription.deleted`

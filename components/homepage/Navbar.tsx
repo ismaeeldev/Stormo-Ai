@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function HomepageNavbar() {
   const { data: session, status } = useSession();
@@ -24,6 +24,11 @@ export default function HomepageNavbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    await signOut({ redirect: false });
+    window.location.reload();
+  };
 
   const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
     if (isHome) {
@@ -95,13 +100,23 @@ export default function HomepageNavbar() {
             {status === 'loading' ? (
               <div className="h-10 w-28 bg-white/10 rounded-lg animate-pulse" />
             ) : status === 'authenticated' ? (
-              <Link
-                href="/dashboard"
-                className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-all duration-200 shadow-md hover:shadow-primary/20 transform hover:-translate-y-0.5"
-                style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
-              >
-                Dashboard
-              </Link>
+              <>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-medium text-muted hover:text-white transition-colors px-3 py-2 flex items-center gap-1.5"
+                  title="Log Out"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Log Out
+                </button>
+                <Link
+                  href="/dashboard"
+                  className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-all duration-200 shadow-md hover:shadow-primary/20 transform hover:-translate-y-0.5"
+                  style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
+                >
+                  Dashboard
+                </Link>
+              </>
             ) : (
               <>
                 <Link
@@ -216,18 +231,28 @@ export default function HomepageNavbar() {
               )}
             </nav>
 
-            <div className="pt-6 border-t border-white/10 mt-auto">
+            <div className="pt-6 border-t border-white/10 mt-auto space-y-3">
               {status === 'loading' ? (
                 <div className="h-10 w-full bg-white/5 rounded-lg animate-pulse" />
               ) : status === 'authenticated' ? (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileOpen(false)}
-                  className="w-full bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg py-3 text-center transition-colors shadow-lg block"
-                  style={{ minHeight: '44px' }}
-                >
-                  Dashboard
-                </Link>
+                <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="w-full bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg py-3 text-center transition-colors shadow-lg block"
+                    style={{ minHeight: '44px' }}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center gap-2 text-sm font-medium text-muted hover:text-white border border-white/10 hover:border-white/20 rounded-lg py-3 transition-colors"
+                    style={{ minHeight: '44px' }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Log Out
+                  </button>
+                </>
               ) : (
                 <Link
                   href="/register"
