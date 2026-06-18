@@ -8,7 +8,7 @@ function loadTemplate(filename: string, replacements: Record<string, string>): s
   try {
     const filePath = path.join(process.cwd(), 'lib/email/templates', filename);
     let template = fs.readFileSync(filePath, 'utf8');
-    const allReplacements = {
+    const allReplacements: Record<string, string> = {
       logoUrl: `${baseUrl}/stormo-logo.png`,
       ...replacements,
     };
