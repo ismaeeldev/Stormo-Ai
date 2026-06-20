@@ -66,7 +66,7 @@ export default function SocialProofSection() {
         {/* Action Button */}
         <div className="pt-8">
           <Link
-            href="/register"
+            href="/pricing"
             className="bg-primary hover:bg-[#C4531A] text-white font-bold rounded-lg px-8 py-4 text-sm sm:text-base transition-all duration-300 shadow-xl hover:shadow-primary/30 transform hover:-translate-y-1 inline-flex items-center gap-2"
             style={{ minHeight: '52px' }}
           >

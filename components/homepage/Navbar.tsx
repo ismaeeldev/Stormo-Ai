@@ -126,7 +126,7 @@ export default function HomepageNavbar() {
                   Log In
                 </Link>
                 <Link
-                  href="/register"
+                  href="/pricing"
                   className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-2.5 text-sm transition-all duration-200 shadow-md hover:shadow-primary/20 transform hover:-translate-y-0.5"
                   style={{ minHeight: '44px', display: 'inline-flex', alignItems: 'center' }}
                 >
@@ -248,7 +248,7 @@ export default function HomepageNavbar() {
                 </>
               ) : (
                 <Link
-                  href="/register"
+                  href="/pricing"
                   onClick={() => setMobileOpen(false)}
                   className="w-full bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg py-3 text-center transition-colors shadow-lg block"
                   style={{ minHeight: '44px' }}

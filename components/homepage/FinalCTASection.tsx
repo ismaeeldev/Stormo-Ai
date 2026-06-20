@@ -28,7 +28,7 @@ export default function FinalCTASection() {
         </p>
         <div className="pt-4">
           <Link
-            href="/register"
+            href="/pricing"
             className="bg-white hover:bg-orange-tint text-primary font-black text-base sm:text-lg px-8 py-4.5 rounded-lg shadow-2xl transition-all duration-300 transform hover:-translate-y-1 inline-flex items-center gap-2"
             style={{ minHeight: '56px' }}
           >
