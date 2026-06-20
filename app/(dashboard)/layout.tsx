@@ -124,7 +124,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Drawer menu */}
           <aside className="relative flex flex-col w-64 bg-dark text-white h-full shadow-2xl transition-transform duration-300">
-            <div className="h-16 flex items-center justify-center px-6 border-b border-gray-800 relative">
+            <div className="border-b border-gray-800 safe-top">
+            <div className="h-16 flex items-center justify-center px-6 relative">
               <Link href="/dashboard" className="flex items-center gap-2.5">
                 <img src="/stormo-logo.png" alt="Stormo Logo" className="h-13 w-auto object-contain" />
               </Link>
@@ -134,6 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <X className="h-6 w-6" />
               </button>
+            </div>
             </div>
 
             <NavLinks onClick={() => setIsMobileOpen(false)} />
@@ -175,17 +177,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar (Mobile Only) */}
-        <header className="h-16 border-b border-gray-800 bg-dark flex items-center justify-between px-4 md:hidden flex-shrink-0">
-          <button
-            onClick={() => setIsMobileOpen(true)}
-            className="p-2 rounded-md text-muted hover:text-white hover:bg-[#252525] transition-colors"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <img src="/stormo-logo.png" alt="Stormo Logo" className="h-12 w-auto object-contain" />
-          </Link>
-          <div className="w-10"></div> {/* Spacer to center the logo */}
+        <header className="md:hidden border-b border-gray-800 bg-dark flex-shrink-0 safe-top">
+          <div className="h-16 flex items-center justify-between px-4">
+            <button
+              onClick={() => setIsMobileOpen(true)}
+              className="p-2 rounded-md text-muted hover:text-white hover:bg-[#252525] transition-colors"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <img src="/stormo-logo.png" alt="Stormo Logo" className="h-12 w-auto object-contain" />
+            </Link>
+            <div className="w-10" />
+          </div>
         </header>
 
         {/* Nested Page Content */}

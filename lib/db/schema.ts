@@ -142,6 +142,26 @@ export const subscriptions = pgTable('subscriptions', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const adminUsers = pgTable('admin_users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  username: varchar('username', { length: 100 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export const coupons = pgTable('coupons', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 255 }).notNull(),
+  code: varchar('code', { length: 100 }).notNull().unique(),
+  planType: varchar('plan_type', { length: 50 }).notNull(), // 'starter' | 'growth'
+  maxRedemptions: integer('max_redemptions').notNull(),
+  usedCount: integer('used_count').notNull().default(0),
+  expiresAt: timestamp('expires_at'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 export type DatabaseSchema = {
   users: typeof users;
   storeProfiles: typeof storeProfiles;

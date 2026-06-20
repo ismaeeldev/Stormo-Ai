@@ -3,13 +3,46 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Check, Loader2, Lock, Unlock } from 'lucide-react';
+import { Check, Loader2, Lock, Unlock, Tag, ChevronDown } from 'lucide-react';
 
 export default function PricingClient() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const [loadingPlan, setLoadingPlan] = useState<'starter' | 'growth' | null>(null);
   const [error, setError] = useState('');
+
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+
+  async function handleCouponRedeem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!couponCode.trim()) return;
+    setCouponError('');
+    setCouponSuccess('');
+    setCouponLoading(true);
+    try {
+      const res = await fetch('/api/redeem-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: couponCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCouponError(data.error || 'Invalid coupon code');
+        return;
+      }
+      setCouponSuccess(`Coupon applied! Activating your ${data.planType} plan…`);
+      await update();
+      setTimeout(() => router.push('/onboarding'), 1500);
+    } catch {
+      setCouponError('Network error — please try again');
+    } finally {
+      setCouponLoading(false);
+    }
+  }
 
   const [userTier, setUserTier] = useState<string>('free');
   const [userSales, setUserSales] = useState<number>(0);
@@ -297,8 +330,55 @@ export default function PricingClient() {
 
         </div>
 
+        {/* Coupon code section — only for logged-in users without an active plan */}
+        {status === 'authenticated' && !isCurrentStarter && !isCurrentGrowth && (
+          <div className="mt-14 max-w-md mx-auto border-t border-gray-200 pt-10">
+            <button
+              type="button"
+              onClick={() => { setCouponOpen((o) => !o); setCouponError(''); setCouponSuccess(''); }}
+              className="w-full flex items-center justify-center gap-2 text-sm text-subtle hover:text-dark transition-colors cursor-pointer"
+            >
+              <Tag className="h-4 w-4 text-primary" />
+              Have a coupon code?
+              <ChevronDown className={`h-4 w-4 transition-transform ${couponOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {couponOpen && (
+              <div className="mt-4 bg-white rounded-2xl border border-gray-100/60 shadow-[0_8px_24px_rgba(0,0,0,0.04)] p-5">
+                {couponSuccess ? (
+                  <div className="flex items-center gap-3 text-green-600 text-sm font-medium">
+                    <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    {couponSuccess}
+                  </div>
+                ) : (
+                  <form onSubmit={handleCouponRedeem} className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                      placeholder="Enter coupon code"
+                      className="flex-1 border border-gray-200/80 rounded-xl px-4 py-3 text-sm font-mono tracking-widest uppercase text-dark bg-white/50 placeholder-gray-300 placeholder:normal-case placeholder:tracking-normal focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
+                      disabled={couponLoading}
+                    />
+                    <button
+                      type="submit"
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-xl px-6 py-3 text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap shadow-lg hover:shadow-primary/25"
+                    >
+                      {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </button>
+                  </form>
+                )}
+                {couponError && (
+                  <p className="mt-3 text-sm text-destructive">{couponError}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Footer info text */}
-        <div className="mt-12 flex items-center justify-center gap-2 text-sm text-[#666666] font-semibold">
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-[#666666] font-semibold">
           <Check className="h-4 w-4 text-primary" />
           <span>No contracts. No hidden fees. Cancel anytime.</span>
         </div>

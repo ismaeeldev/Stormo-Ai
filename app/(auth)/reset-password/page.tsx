@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Zap, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -79,9 +79,8 @@ function ResetPasswordForm() {
   return (
     <div className="w-full max-w-md bg-white rounded-xl shadow-lg border-t-3 border-primary p-8">
       <div className="flex flex-col items-center mb-6">
-        <Link href="/" className="flex items-center gap-2 mb-2">
-          <Zap className="h-8 w-8 text-primary fill-primary" />
-          <span className="text-2xl font-bold text-dark">Stormo.io</span>
+        <Link href="/" className="flex items-center mb-2">
+          <img src="/stormo-logo.png" alt="Stormo" className="h-14 w-auto object-contain" />
         </Link>
         <h2 className="text-xl font-bold text-dark mt-2">Create New Password</h2>
         <p className="text-subtle text-sm text-center mt-1">

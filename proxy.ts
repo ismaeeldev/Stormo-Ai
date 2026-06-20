@@ -1,10 +1,28 @@
 import { auth } from './auth';
 import { NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export default auth((req) => {
+const adminSecret = () => new TextEncoder().encode(process.env.ADMIN_JWT_SECRET || 'change-me-in-prod');
+
+export default auth(async (req) => {
   const isLoggedIn = !!req.auth;
   const { nextUrl } = req;
   const pathname = nextUrl.pathname;
+
+  // ── Admin route protection (separate from user auth) ─────────────────────
+  if (pathname.startsWith('/admin')) {
+    if (pathname === '/admin/login') return NextResponse.next();
+    const token = req.cookies.get('admin_token')?.value;
+    if (!token) return NextResponse.redirect(new URL('/admin/login', nextUrl));
+    try {
+      await jwtVerify(token, adminSecret());
+      return NextResponse.next();
+    } catch {
+      const res = NextResponse.redirect(new URL('/admin/login', nextUrl));
+      res.cookies.delete('admin_token');
+      return res;
+    }
+  }
 
   const isDashboardRoute = pathname.startsWith('/dashboard');
   const isOnboardingRoute = pathname === '/onboarding';
@@ -56,5 +74,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/onboarding', '/api/stripe/:path*'],
+  matcher: ['/dashboard/:path*', '/onboarding', '/api/stripe/:path*', '/admin/:path*'],
 };

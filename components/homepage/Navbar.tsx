@@ -162,15 +162,8 @@ export default function HomepageNavbar() {
           {/* Sidebar Panel */}
           <aside className="fixed top-0 right-0 bottom-0 w-64 bg-dark text-white shadow-2xl flex flex-col p-6 border-l border-white/10 animate-in slide-in-from-right duration-300">
             <div className="flex items-center justify-between pb-6 border-b border-white/10 mb-6">
-              <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2.5">
-                <div className="relative flex items-center justify-center w-8 h-8 bg-primary/10 rounded-lg border border-primary/20 shadow-sm">
-                  <svg className="h-4.5 w-4.5 text-primary fill-primary" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 13.5H11.5L10.5 22L20.5 10.5H11L12 2Z" />
-                  </svg>
-                </div>
-                <span className="text-xl font-black text-white tracking-tight">
-                  Stormo<span className="text-primary font-bold">.io</span>
-                </span>
+              <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center">
+                <img src="/stormo-logo.png" alt="Stormo" className="h-12 w-auto object-contain" />
               </Link>
               <button
                 onClick={() => setMobileOpen(false)}
