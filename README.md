@@ -179,7 +179,7 @@ https://your-domain.com/api/stripe/webhook
 
 **Muhammad Ismaeel**
 - GitHub: [@ismaeeldev](https://github.com/ismaeeldev)
-- Email: mi0364919@gmail.com
+- Email: m.ismaeel.developer@gmail.com
 
 ---
 
