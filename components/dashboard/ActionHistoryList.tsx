@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Loader2, Calendar, Filter, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Filter, RefreshCw } from 'lucide-react';
 
 interface HistoryAction {
   id: string;
@@ -17,9 +17,10 @@ export default function ActionHistoryList() {
   const [items, setItems] = useState<HistoryAction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  
+
   // Filter States
   const [statusFilter, setStatusFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
@@ -65,6 +66,24 @@ export default function ActionHistoryList() {
     fetchHistory(1, false);
   }, [statusFilter, channelFilter]);
 
+  // Listen for action updates dispatched by DailyActionCard
+  useEffect(() => {
+    const handler = () => {
+      setIsRefreshing(true);
+      setPage(1);
+      fetchHistory(1, false).finally(() => setIsRefreshing(false));
+    };
+    window.addEventListener('stormo:action-updated', handler);
+    return () => window.removeEventListener('stormo:action-updated', handler);
+  }, [statusFilter, channelFilter]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    setPage(1);
+    await fetchHistory(1, false);
+    setIsRefreshing(false);
+  };
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -96,7 +115,7 @@ export default function ActionHistoryList() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-xl font-bold text-dark">Action History</h2>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Status Filter */}
           <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm">
             <Filter className="h-3.5 w-3.5 text-subtle" />
@@ -128,6 +147,16 @@ export default function ActionHistoryList() {
               ))}
             </select>
           </div>
+
+          {/* Refresh Button */}
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing || isLoading}
+            title="Refresh history"
+            className="flex items-center justify-center h-[34px] w-[34px] bg-white border border-gray-200 rounded-lg shadow-sm hover:border-primary hover:bg-orange-tint transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 text-subtle ${isRefreshing ? 'animate-spin text-primary' : ''}`} />
+          </button>
         </div>
       </div>
 

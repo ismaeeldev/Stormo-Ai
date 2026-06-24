@@ -137,7 +137,7 @@ export default function AskStormo() {
   return (
     <>
       {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div id="tour-ask" className="fixed bottom-6 right-6 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="h-14 w-14 bg-primary hover:bg-[#C4531A] text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer relative group"

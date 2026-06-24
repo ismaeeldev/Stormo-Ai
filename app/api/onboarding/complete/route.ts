@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { createStoreProfile } from '@/lib/db/queries';
+import { createStoreProfile, getUserById } from '@/lib/db/queries';
 import { generateDailyAction } from '@/lib/ai/action-generator';
 
 export async function POST(request: Request) {
@@ -19,6 +19,22 @@ export async function POST(request: Request) {
 
     if (!answers) {
       return NextResponse.json({ error: 'No answers provided' }, { status: 400 });
+    }
+
+    // Ensure the user exists in the custom users table before inserting related records.
+    // This guards against OAuth users whose record wasn't created during sign-in.
+    const existingUser = await getUserById(userId);
+    if (!existingUser) {
+      await db.insert(users).values({
+        id: userId,
+        email: session.user.email || '',
+        name: session.user.name || null,
+        provider: 'email',
+        subscriptionTier: 'free',
+        subscriptionStatus: 'inactive',
+        onboardingCompleted: false,
+        onboardingStep: 0,
+      }).onConflictDoNothing();
     }
 
     // Extract basic fields for compatibility with existing DB columns

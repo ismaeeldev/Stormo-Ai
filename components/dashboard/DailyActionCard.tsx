@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, Clipboard, ClipboardCheck, Check, CalendarDays, HelpCircle, X } from 'lucide-react';
 
 const LOADING_MSGS = [
@@ -102,8 +102,8 @@ export default function DailyActionCard() {
         method: 'PATCH',
       });
       if (!res.ok) throw new Error('Failed to postpone action');
-      // Clear action state and show message or reloading
       setAction(null);
+      window.dispatchEvent(new CustomEvent('stormo:action-updated'));
       fetchTodayAction();
     } catch (err: any) {
       setError(err.message || 'Failed to postpone action');
@@ -203,7 +203,7 @@ export default function DailyActionCard() {
           </div>
 
           {action.content && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-semibold text-dark uppercase tracking-wider">Generated Copy Template</span>
                 <button
@@ -223,9 +223,9 @@ export default function DailyActionCard() {
                   )}
                 </button>
               </div>
-              <pre className="bg-[#2E2E2E] text-green-400 font-mono text-sm p-5 rounded-lg overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-60 border border-gray-800">
-                {action.content}
-              </pre>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 max-h-72 overflow-y-auto">
+                <ContentDisplay content={action.content} />
+              </div>
             </div>
           )}
         </div>
@@ -296,6 +296,25 @@ export default function DailyActionCard() {
         </div>
       )}
     </>
+  );
+}
+
+function ContentDisplay({ content }: { content: string }) {
+  const HEADER_RE = /^(Story\s+\d+|Subject|Hook|Caption|Headline|Section|Part|Day\s+\d+|Step\s+\d+|Option\s+\d+|Post\s+\d+|Email\s+\d+|Pin\s+\d+|Intro|Outro|CTA|Body|Opening|Closing)[:\s]/i;
+  return (
+    <div className="space-y-0.5 text-sm text-[#2D2D2D] leading-relaxed font-sans">
+      {content.split('\n').map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-2" />;
+        if (HEADER_RE.test(line.trim())) {
+          return (
+            <p key={i} className="font-bold text-primary mt-4 first:mt-0 text-sm">
+              {line}
+            </p>
+          );
+        }
+        return <p key={i}>{line}</p>;
+      })}
+    </div>
   );
 }
 

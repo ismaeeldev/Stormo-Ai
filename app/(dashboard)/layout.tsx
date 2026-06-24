@@ -18,6 +18,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import AskStormo from '@/components/dashboard/AskStormo';
+import DashboardTour from '@/components/dashboard/DashboardTour';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,11 +26,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = [
-    { label: "Today's Action", href: '/dashboard', icon: Zap },
-    { label: 'My Content', href: '/dashboard/content', icon: FileText },
-    { label: 'Outreach', href: '/dashboard/outreach', icon: Users },
-    { label: 'Campaigns', href: '/dashboard/campaigns', icon: Calendar },
-    { label: 'Milestones', href: '/dashboard/milestones', icon: Trophy },
+    { label: "Today's Action", href: '/dashboard', icon: Zap, tourId: 'tour-today' },
+    { label: 'My Content', href: '/dashboard/content', icon: FileText, tourId: 'tour-content' },
+    { label: 'Outreach', href: '/dashboard/outreach', icon: Users, tourId: 'tour-outreach' },
+    { label: 'Campaigns', href: '/dashboard/campaigns', icon: Calendar, tourId: 'tour-campaigns' },
+    { label: 'Milestones', href: '/dashboard/milestones', icon: Trophy, tourId: 'tour-milestones' },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -50,6 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return (
           <Link
             key={item.href}
+            id={item.tourId}
             href={item.href}
             onClick={onClick}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
@@ -200,6 +202,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Ask Stormo Floating Chat Widget */}
       <AskStormo />
+
+      {/* First-visit guided product tour */}
+      <DashboardTour />
     </div>
   );
 }

@@ -2,6 +2,8 @@ import NextAuth, { DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { getUserByEmail, getUserById } from '@/lib/db/queries';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
 import bcrypt from 'bcryptjs';
 
 declare module 'next-auth' {
@@ -78,8 +80,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      // On first OAuth sign-in, ensure user exists in the custom users table
+      if (user && account && account.provider !== 'credentials') {
+        const existingUser = await getUserByEmail(user.email!);
+        if (existingUser) {
+          // Already registered via credentials with same email — link accounts
+          token.sub = existingUser.id;
+        } else {
+          // New OAuth user — create a record in the custom users table
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              email: user.email || '',
+              name: user.name || null,
+              avatarUrl: user.image || null,
+              provider: account.provider,
+              emailVerified: true,
+              subscriptionTier: 'free',
+              subscriptionStatus: 'inactive',
+              onboardingCompleted: false,
+              onboardingStep: 0,
+            })
+            .returning();
+          token.sub = newUser.id;
+        }
+      } else if (user) {
         token.sub = user.id;
       }
 

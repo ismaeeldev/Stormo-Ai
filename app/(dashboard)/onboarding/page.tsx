@@ -21,7 +21,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     id: 'welcome',
     topic: 1,
     type: 'welcome',
-    text: "Welcome to Stormo. I'm your AI marketing advisor and I'm going to help you get customers — without spending money on ads. Before I build your personalized acquisition plan I need to learn about your store. This conversation takes about 10 minutes and shapes everything I do for you going forward.",
+    text: "Welcome to Stormo. I'm your AI marketing advisor and I'm going to help you get customers, without spending money on ads. Before I build your personalized acquisition plan I need to learn about your store. This conversation will take between five and ten minutes. The more details you provide in your answers, the more personalized and powerful your AI acquisition plan will be.",
     options: ["Let's Go"],
   },
   // Topic 1
@@ -38,7 +38,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 1,
     type: 'choice',
     text: "What platform is your store on?",
-    options: ['Shopify', 'Etsy', 'WooCommerce', 'Squarespace', 'Wix', 'BigCommerce', 'Other — type your own'],
+    options: ['Shopify', 'Etsy', 'WooCommerce', 'Squarespace', 'Wix', 'BigCommerce', 'Other, type your own'],
     key: 'storePlatform',
   },
   {
@@ -70,14 +70,14 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 1,
     type: 'choice',
     text: "Do you have photos or videos of your products ready to use?",
-    options: ['Yes — photos and videos', 'Yes — photos only', 'Basic photos only', 'Not yet'],
+    options: ['Yes, photos and videos', 'Yes, photos only', 'Basic photos only', 'Not yet'],
     key: 'hasProductMedia',
   },
   {
     id: 't1_confirm',
     topic: 1,
     type: 'confirmation',
-    text: (ans) => `Got it — you're selling ${ans.productType || 'products'} on ${ans.storePlatform || 'your platform'} and your store has been live for ${ans.storeLiveDuration || 'some time'}. Let me learn a bit more about your customers.`,
+    text: (ans) => `Got it. You're selling ${ans.productType || 'products'} on ${ans.storePlatform || 'your platform'} and your store has been live for ${ans.storeLiveDuration || 'some time'}. Let me learn a bit more about your customers.`,
     options: ['Next Step'],
   },
   // Topic 2
@@ -85,7 +85,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     id: 't2_q1_target',
     topic: 2,
     type: 'text',
-    text: "Who is your target customer? Describe them in your own words — even a rough idea helps.",
+    text: "Who is your target customer? Describe them in your own words, even a rough idea helps.",
     key: 'targetCustomer',
     placeholder: "e.g. Young professionals looking for unique minimalist styling...",
   },
@@ -94,7 +94,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 2,
     type: 'choice',
     text: "What is the age range of your ideal customer?",
-    options: ['Under 18', '18–24', '25–34', '35–49', '50+', 'Any age — no specific demographic'],
+    options: ['Under 18', '18–24', '25–34', '35–49', '50+', 'Any age, no specific demographic'],
     key: 'targetAgeRange',
   },
   {
@@ -109,23 +109,15 @@ const ONBOARDING_QUESTIONS: Question[] = [
     id: 't2_q4_value',
     topic: 2,
     type: 'text',
-    text: "Why would someone choose your product?",
+    text: "What makes your product the right choice for your ideal customer? Think about why they would pick you over anything else.",
     key: 'valueProposition',
-    placeholder: "e.g. Premium quality, organic materials, handmade...",
-  },
-  {
-    id: 't2_q5_reason',
-    topic: 2,
-    type: 'choice',
-    text: "What is the main reason someone buys your product?",
-    options: ['Gift for someone', 'Treat for themselves', 'Solving a specific problem', 'Hobby or passion', 'Professional need', 'Other — type your own'],
-    key: 'purchaseReason',
+    placeholder: "e.g. Premium quality, organic materials, handmade with care...",
   },
   {
     id: 't2_confirm',
     topic: 2,
     type: 'confirmation',
-    text: "Perfect — I have a clear picture of your ideal customer. Now let me understand where you are right now.",
+    text: "Perfect. I have a clear picture of your ideal customer. Now let me understand where you are right now.",
     options: ['Next Step'],
   },
   // Topic 3
@@ -142,7 +134,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 3,
     type: 'choice',
     text: "Have you ever run paid ads before?",
-    options: ["Yes — I've run ads before", "No — never run ads", "I tried but stopped"],
+    options: ["Yes, I've run ads before", "No, never run ads", "I tried but stopped"],
     key: 'runAdsBefore',
   },
   {
@@ -157,7 +149,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     id: 't3_confirm',
     topic: 3,
     type: 'confirmation',
-    text: "Thanks for being honest about where you are — that helps me build the right plan for you. Let's talk about your time and resources.",
+    text: "Thanks for being honest about where you are. That helps me build the right plan for you. Let's talk about your time and resources.",
     options: ['Next Step'],
   },
   // Topic 4
@@ -182,7 +174,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 4,
     type: 'choice',
     text: "What is your monthly marketing budget right now?",
-    options: ['$0 — organic only', 'Under $100', '$100–$500', '$500+'],
+    options: ['$0, organic only', 'Under $100', '$100–$500', '$500+'],
     key: 'monthlyBudget',
   },
   {
@@ -198,14 +190,14 @@ const ONBOARDING_QUESTIONS: Question[] = [
     topic: 4,
     type: 'choice',
     text: "Are you comfortable appearing on camera for videos or reels?",
-    options: ["Yes — I'm comfortable on camera", "Maybe — I'd try it", "No — I prefer not to be on camera"],
+    options: ["Yes, I'm comfortable on camera", "Maybe, I'd try it", "No, I prefer not to be on camera"],
     key: 'comfortableOnCamera',
   },
   {
     id: 't4_confirm',
     topic: 4,
     type: 'confirmation',
-    text: "Good — I know exactly what I'm working with. Last topic — your goals.",
+    text: "Perfect. I have everything I need. One last topic and then I will build your plan.",
     options: ['Next Step'],
   },
   // Topic 5
@@ -236,7 +228,7 @@ const ONBOARDING_QUESTIONS: Question[] = [
     id: 'closing',
     topic: 5,
     type: 'closing',
-    text: "Perfect — I have everything I need to build your personalized action plan. Let's get you more customers.",
+    text: "Perfect. I have everything I need to build your personalized action plan. Let's get you more customers.",
     options: ['Build My Plan'],
   },
 ];
@@ -259,8 +251,6 @@ export default function OnboardingPage() {
   // Custom text options
   const [showOtherPlatformInput, setShowOtherPlatformInput] = useState(false);
   const [otherPlatformText, setOtherPlatformText] = useState('');
-  const [showOtherReasonInput, setShowOtherReasonInput] = useState(false);
-  const [otherReasonText, setOtherReasonText] = useState('');
 
   // Multi-select state
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -379,8 +369,6 @@ export default function OnboardingPage() {
         // Reset states for inputs
         setShowOtherPlatformInput(false);
         setOtherPlatformText('');
-        setShowOtherReasonInput(false);
-        setOtherReasonText('');
         setSelectedPlatforms([]);
       }, 600);
     }
@@ -401,28 +389,16 @@ export default function OnboardingPage() {
   };
 
   const handleChoiceSelect = (option: string) => {
-    if (option === 'Other — type your own') {
-      if (currentQuestion.id === 't1_q2_platform') {
-        setShowOtherPlatformInput(true);
-        return;
-      }
-      if (currentQuestion.id === 't2_q5_reason') {
-        setShowOtherReasonInput(true);
-        return;
-      }
+    if (option === 'Other, type your own' && currentQuestion.id === 't1_q2_platform') {
+      setShowOtherPlatformInput(true);
+      return;
     }
-
     handleNextQuestion(option, option);
   };
 
   const handleOtherSubmit = () => {
-    if (currentQuestion.id === 't1_q2_platform') {
-      if (!otherPlatformText.trim()) return;
-      handleNextQuestion(otherPlatformText.trim(), otherPlatformText.trim());
-    } else if (currentQuestion.id === 't2_q5_reason') {
-      if (!otherReasonText.trim()) return;
-      handleNextQuestion(otherReasonText.trim(), otherReasonText.trim());
-    }
+    if (!otherPlatformText.trim()) return;
+    handleNextQuestion(otherPlatformText.trim(), otherPlatformText.trim());
   };
 
   const handleMultiChoiceToggle = (option: string) => {
@@ -632,8 +608,8 @@ export default function OnboardingPage() {
                   <p className="text-[11px] text-subtle mt-0.5 leading-tight">
                     {activeTopic === 1 && "Store URL, platform, pricing structure, and product assets."}
                     {activeTopic === 2 && "Understand who you sell to, their age, gender, and purchase motives."}
-                    {activeTopic === 3 && "Where you are in growth — sales, advertising history, tried approaches."}
-                    {activeTopic === 4 && "Your capacity, social channels, smartphone setup, and budget."}
+                    {activeTopic === 3 && "Where you are in growth: sales, advertising history, tried approaches."}
+                    {activeTopic === 4 && "Your capacity, social channels, content comfort, and budget."}
                     {activeTopic === 5 && "Target metrics, side vs. main focus, and final review."}
                   </p>
                 </div>
@@ -723,7 +699,7 @@ export default function OnboardingPage() {
             <div className="bg-white border-t border-gray-100 px-4 sm:px-6 py-4 flex flex-col items-center gap-3 flex-shrink-0 z-10 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
 
               {/* Choice buttons */}
-              {currentQuestion.type === 'choice' && !showOtherPlatformInput && !showOtherReasonInput && (
+              {currentQuestion.type === 'choice' && !showOtherPlatformInput && (
                 <div className="flex flex-wrap gap-2 justify-center max-w-2xl w-full">
                   {currentQuestion.options?.map((opt) => (
                     <button
@@ -820,25 +796,6 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Other purchase reason input */}
-              {showOtherReasonInput && (
-                <div className="flex items-center gap-3 w-full max-w-md">
-                  <input
-                    type="text"
-                    value={otherReasonText}
-                    onChange={(e) => setOtherReasonText(e.target.value)}
-                    placeholder="Enter reason..."
-                    className="flex-1 border border-gray-200 rounded-2xl px-4 py-2.5 text-xs text-dark focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all"
-                  />
-                  <button
-                    onClick={handleOtherSubmit}
-                    disabled={!otherReasonText.trim()}
-                    className="bg-primary hover:bg-[#C4531A] text-white font-bold text-xs rounded-2xl px-5 py-2.5 transition-all cursor-pointer disabled:opacity-50 active:scale-[0.97]"
-                  >
-                    Submit
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
