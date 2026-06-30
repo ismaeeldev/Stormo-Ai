@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { callClaudeJSON } from '@/lib/ai/claude';
 
+// Haiku responds in 1-3s — well within Vercel Hobby's 10s cap.
+export const maxDuration = 25;
+
 // Maps each topic to the fields Claude should try to extract,
 // and which question IDs can be skipped if those fields are found.
 const TOPIC_FIELDS: Record<string, { fields: string[]; skipIfExtracted: string[] }> = {
@@ -111,8 +114,8 @@ export async function POST(request: Request) {
 
     try {
       claudeResult = await Promise.race([
-        callClaudeJSON(systemPrompt, userMessage),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 12000)),
+        callClaudeJSON(systemPrompt, userMessage, 'claude-haiku-4-5-20251001'),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
       ]);
     } catch {
       // Claude threw — treat as graceful degradation

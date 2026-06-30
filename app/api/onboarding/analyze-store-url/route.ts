@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { load } from 'cheerio';
 import { callClaudeJSON } from '@/lib/ai/claude';
 
+// Haiku responds in 1-3s; fetch 5s; total well within Vercel Hobby's 10s cap.
+export const maxDuration = 30;
+
 const SYSTEM_PROMPT = `You are analyzing a merchant's online store homepage to help build their marketing profile.
 
 Extract the following information and return ONLY valid JSON matching this exact structure:
@@ -104,9 +107,10 @@ export async function POST(request: Request) {
     // Call Claude with 15-second timeout
     const userMessage = `Here is the homepage text content:\n<homepage>\n${pageText}\n</homepage>`;
 
+    // Use Haiku for speed (1-3s) — analysis quality is sufficient for onboarding.
     const analysis = await Promise.race([
-      callClaudeJSON(SYSTEM_PROMPT, userMessage),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000)),
+      callClaudeJSON(SYSTEM_PROMPT, userMessage, 'claude-haiku-4-5-20251001'),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
     ]);
 
     if (!analysis) {
