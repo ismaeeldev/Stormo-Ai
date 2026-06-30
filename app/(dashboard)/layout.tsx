@@ -16,6 +16,7 @@ import {
   MessageSquare,
   LogOut,
   User as UserIcon,
+  BarChart2,
 } from 'lucide-react';
 import AskStormo from '@/components/dashboard/AskStormo';
 import DashboardTour from '@/components/dashboard/DashboardTour';
@@ -31,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: 'Outreach', href: '/dashboard/outreach', icon: Users, tourId: 'tour-outreach' },
     { label: 'Campaigns', href: '/dashboard/campaigns', icon: Calendar, tourId: 'tour-campaigns' },
     { label: 'Milestones', href: '/dashboard/milestones', icon: Trophy, tourId: 'tour-milestones' },
+    { label: 'Performance', href: '/dashboard/performance', icon: BarChart2 },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
@@ -100,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-sm font-semibold truncate text-white">
                 {user?.name || user?.email || 'User'}
               </p>
-              <span className="inline-block mt-0.5 px-2 py-0.2 text-[10px] font-bold text-primary bg-orange-tint rounded-full capitalize">
+              <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold text-primary bg-orange-tint rounded-full capitalize">
                 {subscriptionTier}
               </span>
             </div>
@@ -159,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="text-sm font-semibold truncate text-white">
                     {user?.name || user?.email || 'User'}
                   </p>
-                  <span className="inline-block mt-0.5 px-2 py-0.2 text-[10px] font-bold text-primary bg-orange-tint rounded-full capitalize">
+                  <span className="inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold text-primary bg-orange-tint rounded-full capitalize">
                     {subscriptionTier}
                   </span>
                 </div>
@@ -195,7 +197,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Nested Page Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           {children}
         </main>
       </div>

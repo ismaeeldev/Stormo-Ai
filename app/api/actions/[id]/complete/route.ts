@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { actions } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { actions, users } from '@/lib/db/schema';
+import { eq, and, sql } from 'drizzle-orm';
 import { updateCoverageMap } from '@/lib/db/queries';
 import { checkAndAwardMilestones } from '@/lib/milestones/check-milestones';
+import { triggerFirstActionCompleted } from '@/lib/email/triggers';
 
 export async function PATCH(
   request: Request,
@@ -18,11 +19,8 @@ export async function PATCH(
 
     const { id } = await params;
     const userId = session.user.id;
-    const { outcomeSignal } = await request.json();
-
-    if (!outcomeSignal) {
-      return NextResponse.json({ error: 'outcomeSignal is required' }, { status: 400 });
-    }
+    const body = await request.json().catch(() => ({}));
+    const outcomeSignal: string | null = body.outcomeSignal ?? null;
 
     // Fetch the action first to verify ownership and get channel
     const [action] = await db
@@ -47,11 +45,31 @@ export async function PATCH(
 
     // Update user's channel coverage map in DB
     if (action.channel) {
-      await updateCoverageMap(userId, action.channel, outcomeSignal);
+      await updateCoverageMap(userId, action.channel, outcomeSignal ?? '');
     }
 
     // Check and award milestones
     await checkAndAwardMilestones(userId, 'action_completed');
+
+    // Fire first-completed email if this is their very first completed action (non-blocking)
+    try {
+      const [{ count }] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(actions)
+        .where(and(eq(actions.userId, userId), eq(actions.status, 'completed')));
+      if (count === 1) {
+        const [userRecord] = await db
+          .select({ email: users.email, name: users.name })
+          .from(users)
+          .where(eq(users.id, userId));
+        if (userRecord?.email) {
+          triggerFirstActionCompleted(userRecord.email, userRecord.name ?? 'Founder')
+            .catch((e) => console.error('[Complete] first completed email failed:', e));
+        }
+      }
+    } catch (e) {
+      console.error('[Complete] completed count check for email trigger failed:', e);
+    }
 
     return NextResponse.json(updatedAction);
   } catch (error: any) {

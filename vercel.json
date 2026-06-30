@@ -3,6 +3,26 @@
     {
       "path": "/api/cron/weekly-content",
       "schedule": "0 6 * * 1"
+    },
+    {
+      "path": "/api/cron/daily-actions",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/trial-reminders",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-summary",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/insights",
+      "schedule": "0 9 * * 3"
+    },
+    {
+      "path": "/api/cron/aggregate-performance",
+      "schedule": "0 2 * * *"
     }
   ]
 }

@@ -3,63 +3,85 @@ import { auth } from '@/auth';
 import { createAskStormoChain } from '@/lib/ai/ask-stormo-chain';
 import { saveAskStormoMessage, getAskStormoMessages } from '@/lib/db/queries';
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
-    if (!session || !session.user || !session.user.id) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.id;
-    const { message } = (await request.json()) as { message: string };
 
-    if (!message || typeof message !== 'string') {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { message } = body as { message?: unknown };
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
       return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
     }
 
-    // 1. Save user message to ask_stormo_messages table
-    await saveAskStormoMessage(userId, 'user', message);
+    const trimmedMessage = message.trim();
 
-    // 2. Fetch last 20 messages from DB for context
+    if (trimmedMessage.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: `Message exceeds the ${MAX_MESSAGE_LENGTH}-character limit` },
+        { status: 400 }
+      );
+    }
+
+    // Save user message
+    await saveAskStormoMessage(userId, 'user', trimmedMessage);
+
+    // Fetch last 20 messages for context (newest-first → reverse to chronological)
     const dbMessages = await getAskStormoMessages(userId, 20);
-    // getAskStormoMessages returns newest first. Reverse to chronological order:
-    const sortedMessages = [...dbMessages].reverse();
-    const messageHistory = sortedMessages.map((msg) => ({
+    const messageHistory = [...dbMessages].reverse().map((msg) => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content || '',
     }));
 
-    // Get the LangChain model and messages prompt
     const { model, messages } = await createAskStormoChain(userId, messageHistory);
 
-    // Set up Server-Sent Events (SSE) streaming response
     const encoder = new TextEncoder();
+
     const customStream = new ReadableStream({
       async start(controller) {
-        try {
-          const stream = await model.stream(messages);
-          let fullResponseText = '';
+        const send = (payload: object) =>
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
 
-          for await (const chunk of stream) {
-            const token = typeof chunk.content === 'string'
-              ? chunk.content
-              : JSON.stringify(chunk.content);
-              
-            fullResponseText += token;
-            
+        try {
+          const aiStream = await model.stream(messages);
+          let fullResponse = '';
+
+          for await (const chunk of aiStream) {
+            const token =
+              typeof chunk.content === 'string'
+                ? chunk.content
+                : JSON.stringify(chunk.content);
+
             if (token) {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ token })}\n\n`));
+              fullResponse += token;
+              send({ token });
             }
           }
 
-          // 3. After stream completes: save AI response to ask_stormo_messages table
-          if (fullResponseText.trim()) {
-            await saveAskStormoMessage(userId, 'assistant', fullResponseText);
+          // Persist the complete AI response after streaming finishes
+          if (fullResponse.trim()) {
+            await saveAskStormoMessage(userId, 'assistant', fullResponse);
           }
 
+          // Signal stream completion
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
-        } catch (err: any) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: err.message })}\n\n`));
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : 'AI stream error';
+          send({ error: msg });
           controller.close();
         }
       },
@@ -68,12 +90,14 @@ export async function POST(request: Request) {
     return new Response(customStream, {
       headers: {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no', // Prevent proxy buffering for SSE
       },
     });
-  } catch (error: any) {
-    console.error('Ask Stormo message handler error:', error);
-    return NextResponse.json({ error: error.message || 'An error occurred' }, { status: 500 });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'An error occurred';
+    console.error('[ask-stormo] POST error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

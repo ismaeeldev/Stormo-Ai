@@ -23,6 +23,16 @@ export const users = pgTable('users', {
   onboardingCompleted: boolean('onboarding_completed').default(false),
   onboardingStep: integer('onboarding_step').default(0),
   totalSales: integer('total_sales').default(0),
+  growthUnlocked: boolean('growth_unlocked').default(false),
+  timezone: varchar('timezone', { length: 100 }).default('UTC'),
+  lastLoginAt: timestamp('last_login_at'),
+  inactiveEmailStage: integer('inactive_email_stage').default(0), // 0=none, 3=day3 sent, 7=day7 sent, 14=day14 sent; reset to 0 on login
+  trialEmail15Sent: boolean('trial_email_15_sent').default(false),
+  trialEmail3Sent: boolean('trial_email_3_sent').default(false),
+  trialEmail1Sent: boolean('trial_email_1_sent').default(false),
+  monthlyMilestoneSent: boolean('monthly_milestone_sent').default(false),
+  cancelledAt: timestamp('cancelled_at'),
+  cancellationReEngagementSent: boolean('cancellation_re_engagement_sent').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
@@ -142,6 +152,64 @@ export const subscriptions = pgTable('subscriptions', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+export const sales = pgTable('sales', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  actionId: uuid('action_id').references(() => actions.id, { onDelete: 'set null' }),
+  channel: varchar('channel', { length: 100 }),
+  notes: text('notes'),
+  loggedAt: timestamp('logged_at').defaultNow(),
+});
+
+export const actionResults = pgTable('action_results', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actionId: uuid('action_id').references(() => actions.id, { onDelete: 'cascade' }).unique(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  reach: integer('reach'),
+  engagement: integer('engagement'),
+  followersGained: integer('followers_gained'),
+  salesAttributed: integer('sales_attributed').default(0),
+  clicksToStore: integer('clicks_to_store').default(0),
+  emailListAdditions: integer('email_list_additions').default(0),
+  platform: varchar('platform', { length: 100 }),
+  actionType: varchar('action_type', { length: 100 }),
+  notes: text('notes'),
+  loggedAt: timestamp('logged_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const strategyPerformance = pgTable('strategy_performance', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  platform: varchar('platform', { length: 100 }),
+  actionType: varchar('action_type', { length: 100 }),
+  avgEngagementRate: varchar('avg_engagement_rate', { length: 20 }),
+  avgConversionRate: varchar('avg_conversion_rate', { length: 20 }),
+  totalAttributedSales: integer('total_attributed_sales').default(0),
+  actionCount: integer('action_count').default(0),
+  lastUpdated: timestamp('last_updated').defaultNow(),
+});
+
+export const insights = pgTable('insights', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  insightType: varchar('insight_type', { length: 100 }),
+  isRead: boolean('is_read').default(false),
+  generatedAt: timestamp('generated_at').defaultNow(),
+});
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  sentToday: integer('sent_today').default(0),
+  sentTodayDate: varchar('sent_today_date', { length: 10 }), // YYYY-MM-DD
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 export const adminUsers = pgTable('admin_users', {
   id: uuid('id').primaryKey().defaultRandom(),
   username: varchar('username', { length: 100 }).notNull().unique(),
@@ -166,6 +234,8 @@ export type DatabaseSchema = {
   users: typeof users;
   storeProfiles: typeof storeProfiles;
   actions: typeof actions;
+  sales: typeof sales;
+  actionResults: typeof actionResults;
   actionCompressedSummaries: typeof actionCompressedSummaries;
   weeklyContent: typeof weeklyContent;
   askStormoMessages: typeof askStormoMessages;
@@ -173,4 +243,7 @@ export type DatabaseSchema = {
   milestones: typeof milestones;
   blogPosts: typeof blogPosts;
   subscriptions: typeof subscriptions;
+  pushSubscriptions: typeof pushSubscriptions;
+  insights: typeof insights;
+  strategyPerformance: typeof strategyPerformance;
 };

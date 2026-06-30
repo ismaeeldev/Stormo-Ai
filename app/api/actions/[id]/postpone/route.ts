@@ -20,11 +20,12 @@ export async function PATCH(
     // Calculate tomorrow's date string (YYYY-MM-DD)
     const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-    // Update action record scheduled_for tomorrow
+    // Move to tomorrow and mark as postponed
     const [updatedAction] = await db
       .update(actions)
       .set({
         scheduledFor: tomorrowStr,
+        status: 'postponed',
       })
       .where(and(eq(actions.id, id), eq(actions.userId, userId)))
       .returning();

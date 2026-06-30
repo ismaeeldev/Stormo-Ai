@@ -68,6 +68,8 @@ const CONTENT_TYPE_SHORT: Record<string, string> = {
   pinterest: 'Pinterest',
   blog: 'Blog',
 };
+const POLL_INTERVAL_MS  = 3000;
+const MAX_POLL_ATTEMPTS = 80; // 4 minutes max polling
 
 function GeneratingBanner({ generatedTypes }: { generatedTypes: Set<string> }) {
   const readyCount = generatedTypes.size;
@@ -127,6 +129,46 @@ function getOfficialBrandIconUrl(contentType: string): string {
   }
 }
 
+// Defined outside MyContentPage so React doesn't treat it as a new component on every render
+function ContentGrid({
+  items,
+  onViewItem,
+}: {
+  items: ContentItem[];
+  onViewItem: (item: ContentItem) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.map((item) => {
+        const iconUrl = getOfficialBrandIconUrl(item.contentType);
+        return (
+          <div
+            key={item.id}
+            className="bg-white rounded-xl shadow-md border-t-3 border-primary p-5 flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-0.5 duration-200"
+          >
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <img src={iconUrl} className="h-4.5 w-4.5 object-contain" alt={item.contentType} />
+                <span className="text-xs font-bold uppercase tracking-wider text-dark/70">
+                  {LABEL_MAP[item.contentType] || item.contentType}
+                </span>
+              </div>
+              <h3 className="font-bold text-dark text-base line-clamp-1 mb-2">{item.title}</h3>
+              <p className="text-subtle text-xs leading-relaxed line-clamp-3 mb-4">{item.content}</p>
+            </div>
+            <button
+              onClick={() => onViewItem(item)}
+              className="w-full py-2 px-4 border border-primary text-primary hover:bg-orange-tint text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center"
+            >
+              View & Copy
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function MyContentPage() {
   const [loading, setLoading] = useState(true);
   const [currentWeek, setCurrentWeek] = useState<ContentItem[]>([]);
@@ -141,6 +183,7 @@ export default function MyContentPage() {
     let isMounted = true;
     let pollInterval: ReturnType<typeof setInterval> | null = null;
     let generationTriggered = false;
+    let pollAttempts = 0;
 
     function triggerGeneration(weekStart: string) {
       // Fire 6 parallel generation requests — each runs as an independent Vercel function invocation
@@ -174,10 +217,19 @@ export default function MyContentPage() {
           triggerGeneration(data.currentWeekStart);
         }
 
-        // Poll until all 6 pieces are ready
+        // Poll until all 6 pieces are ready, with a hard ceiling to avoid infinite loops
         const stillGenerating = onboarded && cur.length < TOTAL_CONTENT_TYPES;
         if (stillGenerating && !pollInterval) {
-          pollInterval = setInterval(fetchData, 3000);
+          pollInterval = setInterval(() => {
+            pollAttempts += 1;
+            if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+              // Stop polling — generation took too long or stalled
+              clearInterval(pollInterval!);
+              pollInterval = null;
+              return;
+            }
+            fetchData();
+          }, POLL_INTERVAL_MS);
         } else if (!stillGenerating && pollInterval) {
           clearInterval(pollInterval);
           pollInterval = null;
@@ -263,49 +315,6 @@ export default function MyContentPage() {
     return `Week of ${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`;
   };
 
-  const ContentGrid = ({ items }: { items: ContentItem[] }) => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {items.map((item) => {
-        const iconUrl = getOfficialBrandIconUrl(item.contentType);
-        return (
-          <div
-            key={item.id}
-            className="bg-white rounded-xl shadow-md border-t-3 border-primary p-5 flex flex-col justify-between hover:shadow-lg transition-all hover:-translate-y-0.5 duration-200"
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <img src={iconUrl} className="h-4.5 w-4.5 object-contain" alt={item.contentType} />
-                <span className="text-xs font-bold uppercase tracking-wider text-dark/70">
-                  {item.contentType === 'instagram' ? 'Instagram Post' :
-                   item.contentType === 'email' ? 'Outreach Email' :
-                   item.contentType === 'product_description' ? 'Product Description' :
-                   item.contentType === 'blog' ? 'Blog Outline' :
-                   item.contentType === 'pinterest' ? 'Pinterest Pin' :
-                   item.contentType === 'reddit' ? 'Reddit Post' : item.contentType}
-                </span>
-              </div>
-              <h3 className="font-bold text-dark text-base line-clamp-1 mb-2">
-                {item.title}
-              </h3>
-              <p className="text-subtle text-xs leading-relaxed line-clamp-3 mb-4">
-                {item.content}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                setActiveItem(item);
-                setCopied(false);
-              }}
-              className="w-full py-2 px-4 border border-primary text-primary hover:bg-orange-tint text-xs font-semibold rounded-lg transition-colors cursor-pointer text-center"
-            >
-              View & Copy
-            </button>
-          </div>
-        );
-      })}
-    </div>
-  );
-
   return (
     <div className="space-y-8 max-w-6xl mx-auto px-4 pb-12">
       <div>
@@ -325,7 +334,7 @@ export default function MyContentPage() {
               {formatWeekRange(currentWeek[0].weekStart)}
             </span>
           </div>
-          <ContentGrid items={currentWeek} />
+          <ContentGrid items={currentWeek} onViewItem={(item) => { setActiveItem(item); setCopied(false); }} />
         </section>
       )}
 
@@ -352,7 +361,7 @@ export default function MyContentPage() {
                   </button>
                   {isExpanded && (
                     <div className="p-6 bg-light-bg border-t border-gray-200 animate-in fade-in duration-200">
-                      <ContentGrid items={week.items} />
+                      <ContentGrid items={week.items} onViewItem={(item) => { setActiveItem(item); setCopied(false); }} />
                     </div>
                   )}
                 </div>

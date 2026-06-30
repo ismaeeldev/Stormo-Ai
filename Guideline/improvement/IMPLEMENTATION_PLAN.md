@@ -70,31 +70,27 @@ Before building anything, understand the current state so nothing gets broken.
 
 ## 1.1 Environment Setup
 
-**What this step does:** Ensures the Claude API key is available and verified. Without this, nothing in Phase 1 works.
+**Status: DONE** — `ANTHROPIC_API_KEY` is already set in `.env.local` and Vercel. The key validation is already handled inside `lib/ai/model.ts` via `getModel()`.
 
-### Step-by-step
+**What was created:** `lib/ai/claude.ts` — a shared helper that all Phase 1 API routes import. It wraps `getModel()` (which uses `@langchain/anthropic`, already installed) and exposes two functions:
 
-1. Add `ANTHROPIC_API_KEY=sk-ant-xxxxx` to your Vercel environment variables (Production, Preview, and Development).
-2. Add it to your local `.env.local` file for development.
-3. Create a shared helper at `lib/ai/claude.ts`:
+- `callClaude(systemPrompt, userMessage): Promise<string>` — returns raw text
+- `callClaudeJSON<T>(systemPrompt, userMessage): Promise<T | null>` — returns parsed JSON or null on failure
 
-```typescript
-import Anthropic from '@anthropic-ai/sdk';
+**Note on SDK:** The codebase uses `@langchain/anthropic` (already installed). Do NOT install `@anthropic-ai/sdk` — it is not needed.
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error('ANTHROPIC_API_KEY environment variable is not set');
-}
-
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+**Environment variables already in `.env.local`:**
+```
+AI_PROVIDER=anthropic
+AI_MODEL=claude-sonnet-4-5-20250929
+ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-4. This file is imported by all Phase 1 API routes. If the key is missing, the app throws at startup rather than failing silently during an onboarding session.
+These must also be set in Vercel (Production + Preview + Development).
 
 ### Testing 1.1
-- Start the dev server. If `ANTHROPIC_API_KEY` is not set, the server should throw an error on boot.
-- If set correctly, the server starts normally.
+- Import `callClaude` in any API route and call it — should return a response.
+- Remove `ANTHROPIC_API_KEY` from `.env.local` temporarily — `getModel()` inside `model.ts` will throw: `"ANTHROPIC_API_KEY environment variable is not set"`.
 
 ---
 

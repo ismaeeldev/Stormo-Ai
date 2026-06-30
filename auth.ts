@@ -4,6 +4,7 @@ import Google from 'next-auth/providers/google';
 import { getUserByEmail, getUserById } from '@/lib/db/queries';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
 declare module 'next-auth' {
@@ -117,6 +118,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.onboardingCompleted = dbUser.onboardingCompleted ?? false;
           token.isEmailVerified = dbUser.emailVerified ?? false;
           token.provider = dbUser.provider ?? 'email';
+        }
+
+        // Update lastLoginAt and reset inactiveEmailStage only on fresh sign-in
+        // (user object is present only during the initial sign-in JWT call, not on token refreshes)
+        if (user) {
+          db.update(users)
+            .set({ lastLoginAt: new Date(), inactiveEmailStage: 0 })
+            .where(eq(users.id, token.sub))
+            .catch((e) => console.error('[Auth] lastLoginAt update failed:', e));
         }
       }
       return token;

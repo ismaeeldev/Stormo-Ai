@@ -59,8 +59,7 @@ export default function HomepageNavbar() {
                 alt="Stormo Logo" 
                 className="h-12 sm:h-16 md:h-20 w-auto object-contain" 
                 loading="eager"
-                // @ts-ignore
-                fetchpriority="high"
+                fetchPriority="high"
               />
             </Link>
           </div>

@@ -255,6 +255,19 @@ export default function OnboardingPage() {
   // Multi-select state
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 
+  const [storeAnalysis, setStoreAnalysis] = useState<any>(null);
+  const [isAnalyzingStore, setIsAnalyzingStore] = useState(false);
+  const [isParsingAnswer, setIsParsingAnswer] = useState(false);
+
+  // Ref keeps skip IDs current across async boundaries — avoids stale closure.
+  const skippedIdsRef = useRef<string[]>([]);
+  const [skippedQuestionIds, _setSkippedQuestionIds] = useState<string[]>([]);
+  const addSkippedIds = (ids: string[]) => {
+    const updated = [...new Set([...skippedIdsRef.current, ...ids])];
+    skippedIdsRef.current = updated;
+    _setSkippedQuestionIds(updated);
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -319,6 +332,17 @@ export default function OnboardingPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Capture timezone once session is available
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    fetch('/api/users/timezone', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timezone: tz }),
+    }).catch(() => {});
+  }, [session?.user?.id]);
+
   const currentQuestion = ONBOARDING_QUESTIONS[currentQuestionIndex];
 
   // Helper to check valid URL
@@ -327,10 +351,47 @@ export default function OnboardingPage() {
     return pattern.test(url);
   };
 
-  const handleNextQuestion = async (userAnswerText: string, rawAnswerValue: any) => {
+  // Reads from skippedIdsRef (always current, even after async awaits).
+  const findNextUnskippedIndex = (startIndex: number): number => {
+    let idx = startIndex;
+    while (idx < ONBOARDING_QUESTIONS.length && skippedIdsRef.current.includes(ONBOARDING_QUESTIONS[idx].id)) {
+      idx++;
+    }
+    return idx;
+  };
+
+  // Calls parse-answer, updates the ref + state with any new skip IDs, returns the IDs found.
+  const parseAnswer = async (questionId: string, answer: string): Promise<string[]> => {
+    const topicMap: Record<string, string> = {
+      't1_q3_desc':      'topic1',
+      't2_q1_target':    'topic2',
+      't3_q3_marketing': 'topic3',
+      't5_q1_success':   'topic5',
+    };
+    const topicId = topicMap[questionId];
+    if (!topicId) return [];
+
+    try {
+      const res = await fetch('/api/onboarding/parse-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer, topicId, existingAnswers: answers }),
+      });
+      const data = await res.json();
+      if (data.success && data.skipFollowUps?.length > 0) {
+        // Update ref synchronously so findNextUnskippedIndex sees it immediately.
+        addSkippedIds(data.skipFollowUps);
+        return data.skipFollowUps as string[];
+      }
+    } catch {
+      // Fail silently — no skips applied
+    }
+    return [];
+  };
+
+  const handleNextQuestion = (userAnswerText: string, rawAnswerValue: any) => {
     setError('');
 
-    // Save answer
     if (currentQuestion.key) {
       setAnswers((prev) => ({
         ...prev,
@@ -338,7 +399,6 @@ export default function OnboardingPage() {
       }));
     }
 
-    // Add user response to chat list
     const updatedMessages: ChatMessage[] = [
       ...messages,
       { role: 'user', content: userAnswerText },
@@ -346,27 +406,29 @@ export default function OnboardingPage() {
     setMessages(updatedMessages);
     setInputText('');
 
-    const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < ONBOARDING_QUESTIONS.length) {
-      const nextQ = ONBOARDING_QUESTIONS[nextIndex];
-      let nextQText = '';
-      if (typeof nextQ.text === 'function') {
-        // Merge the current answer so the function can access it
-        const tempAnswers = { ...answers, [currentQuestion.key || '']: rawAnswerValue };
-        nextQText = nextQ.text(tempAnswers);
-      } else {
-        nextQText = nextQ.text;
-      }
+    const rawNextIndex = currentQuestionIndex + 1;
+    // Reads skippedIdsRef.current — always up-to-date, no stale closure risk.
+    const effectiveNextIndex = findNextUnskippedIndex(rawNextIndex);
+    const skippedCount = effectiveNextIndex - rawNextIndex;
 
-      // Add assistant response
+    if (effectiveNextIndex < ONBOARDING_QUESTIONS.length) {
+      const nextQ = ONBOARDING_QUESTIONS[effectiveNextIndex];
+      const tempAnswers = { ...answers, [currentQuestion.key || '']: rawAnswerValue };
+      const nextQText = typeof nextQ.text === 'function'
+        ? nextQ.text(tempAnswers)
+        : nextQ.text;
+
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: nextQText }
-        ]);
-        setCurrentQuestionIndex(nextIndex);
-
-        // Reset states for inputs
+        const newMessages: ChatMessage[] = [];
+        if (skippedCount > 0) {
+          newMessages.push({
+            role: 'assistant',
+            content: "Great detail — I'll skip a few questions I already have the answers to.",
+          });
+        }
+        newMessages.push({ role: 'assistant', content: nextQText });
+        setMessages((prev) => [...prev, ...newMessages]);
+        setCurrentQuestionIndex(effectiveNextIndex);
         setShowOtherPlatformInput(false);
         setOtherPlatformText('');
         setSelectedPlatforms([]);
@@ -374,18 +436,93 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleTextSubmit = () => {
+  const handleTextSubmit = async () => {
     if (!inputText.trim()) return;
 
-    // Validate URL for Q1
+    // ── URL question: analyze store before advancing ──
     if (currentQuestion.id === 't1_q1_url') {
       if (!isValidUrl(inputText.trim())) {
         setError('Please enter a valid store URL (e.g. https://mybrand.com).');
         return;
       }
+
+      const urlValue = inputText.trim();
+      setError('');
+      setInputText('');
+      setIsAnalyzingStore(true);
+
+      // Save URL answer immediately
+      setAnswers(prev => ({ ...prev, storeUrl: urlValue }));
+
+      // Show user message + analyzing placeholder in chat
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: urlValue },
+        { role: 'assistant', content: 'Analyzing your store...' },
+      ]);
+
+      let analysisData: any = null;
+      let confirmMessage = "I couldn't read your store URL automatically, but that's okay — let's continue.";
+
+      try {
+        const res = await fetch('/api/onboarding/analyze-store-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlValue }),
+        });
+        const data = await res.json();
+
+        if (data.success && data.analysis) {
+          analysisData = data.analysis;
+          setStoreAnalysis(data.analysis);
+          setAnswers(prev => ({ ...prev, storeAnalysisResult: data.analysis }));
+          confirmMessage = `Got it. ${data.analysis.summary} I'll use this to personalize your remaining questions.`;
+        }
+      } catch {
+        // silently fall back — confirmMessage stays as the fallback text
+      } finally {
+        setIsAnalyzingStore(false);
+      }
+
+      // Replace the "Analyzing your store..." placeholder with the result
+      setMessages(prev => {
+        const updated = [...prev];
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (updated[i].role === 'assistant' && updated[i].content === 'Analyzing your store...') {
+            updated[i] = { role: 'assistant', content: confirmMessage };
+            break;
+          }
+        }
+        return updated;
+      });
+
+      // Advance to next question
+      const nextIndex = currentQuestionIndex + 1;
+      if (nextIndex < ONBOARDING_QUESTIONS.length) {
+        const nextQ = ONBOARDING_QUESTIONS[nextIndex];
+        const nextQText = typeof nextQ.text === 'function'
+          ? nextQ.text({ ...answers, storeUrl: urlValue, storeAnalysisResult: analysisData })
+          : nextQ.text;
+
+        setTimeout(() => {
+          setMessages(prev => [...prev, { role: 'assistant', content: nextQText }]);
+          setCurrentQuestionIndex(nextIndex);
+          setShowOtherPlatformInput(false);
+          setOtherPlatformText('');
+          setSelectedPlatforms([]);
+        }, 600);
+      }
+
+      return;
     }
 
-    handleNextQuestion(inputText.trim(), inputText.trim());
+    // ── All other text questions ──
+    // Await parse so skippedIdsRef is updated before handleNextQuestion reads it.
+    const answer = inputText.trim();
+    setIsParsingAnswer(true);
+    await parseAnswer(currentQuestion.id, answer);
+    setIsParsingAnswer(false);
+    handleNextQuestion(answer, answer);
   };
 
   const handleChoiceSelect = (option: string) => {
@@ -802,23 +939,35 @@ export default function OnboardingPage() {
           {/* ── Free-text input ── */}
           {currentQuestion && currentQuestion.type === 'text' && !isSubmitting && (
             <div className="px-4 sm:px-6 pb-4 pt-0 bg-white flex-shrink-0 z-10">
-              <div className="max-w-3xl mx-auto flex items-end gap-2.5">
-                <textarea
-                  ref={textareaRef}
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={currentQuestion.placeholder || "Type your answer..."}
-                  rows={1}
-                  className="flex-1 resize-none border border-gray-200 rounded-2xl px-4 py-3 text-sm text-dark bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all max-h-24 min-h-[46px] placeholder:text-gray-400"
-                />
-                <button
-                  onClick={handleTextSubmit}
-                  disabled={!inputText.trim()}
-                  className="h-11 w-11 bg-primary hover:bg-[#C4531A] text-white rounded-2xl flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-40 active:scale-[0.95] flex-shrink-0"
-                >
-                  <Send className="h-4.5 w-4.5" />
-                </button>
+              <div className="max-w-3xl mx-auto flex flex-col gap-2">
+                {(isAnalyzingStore || isParsingAnswer) && (
+                  <div className="flex items-center gap-2 text-xs text-subtle px-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-primary flex-shrink-0" />
+                    <span>{isAnalyzingStore ? 'Analyzing your store, this takes a few seconds…' : 'Thinking…'}</span>
+                  </div>
+                )}
+                <div className="flex items-end gap-2.5">
+                  <textarea
+                    ref={textareaRef}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={currentQuestion.placeholder || "Type your answer..."}
+                    rows={1}
+                    disabled={isAnalyzingStore || isParsingAnswer}
+                    className="flex-1 resize-none border border-gray-200 rounded-2xl px-4 py-3 text-sm text-dark bg-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 transition-all max-h-24 min-h-[46px] placeholder:text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    onClick={handleTextSubmit}
+                    disabled={!inputText.trim() || isAnalyzingStore || isParsingAnswer}
+                    className="h-11 w-11 bg-primary hover:bg-[#C4531A] text-white rounded-2xl flex items-center justify-center shadow-md transition-all cursor-pointer disabled:opacity-40 active:scale-[0.95] flex-shrink-0"
+                  >
+                    {(isAnalyzingStore || isParsingAnswer)
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <Send className="h-4.5 w-4.5" />
+                    }
+                  </button>
+                </div>
               </div>
             </div>
           )}

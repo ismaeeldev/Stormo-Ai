@@ -1,4 +1,4 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, inArray } from 'drizzle-orm';
 import { db } from './index';
 import {
   users,
@@ -45,7 +45,7 @@ export async function createStoreProfile(userId: string, data: Partial<InferInse
   return profile;
 }
 
-// 5. getTodaysAction
+// 5. getTodaysAction — returns any active (non-completed, non-skipped) action for today
 export async function getTodaysAction(userId: string) {
   const today = new Date().toISOString().split('T')[0];
   const [action] = await db
@@ -54,7 +54,8 @@ export async function getTodaysAction(userId: string) {
     .where(
       and(
         eq(actions.userId, userId),
-        eq(actions.scheduledFor, today)
+        eq(actions.scheduledFor, today),
+        inArray(actions.status, ['scheduled', 'pending'])
       )
     );
   return action || null;

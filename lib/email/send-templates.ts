@@ -112,6 +112,20 @@ export async function sendWeeklyContentReadyEmail(to: string, name: string) {
   });
 }
 
+export async function sendGrowthUnlockEmail(to: string, name: string) {
+  const upgradeLink = `${baseUrl}/dashboard/settings?upgrade=true`;
+  const html = loadTemplate('growth-unlock.html', {
+    name,
+    upgradeLink,
+  });
+
+  return sendEmail({
+    to,
+    subject: "You've reached 10 sales. The Growth plan is now unlocked for you.",
+    html,
+  });
+}
+
 export async function sendMilestoneEmail(to: string, milestone: string, name: string) {
   const dashboardLink = `${baseUrl}/dashboard`;
   let filename = 'milestone-first-action.html';

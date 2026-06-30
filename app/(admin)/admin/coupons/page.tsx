@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, Pencil, Trash2, LogOut } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 type Coupon = {
   id: string;
@@ -28,6 +29,7 @@ export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   async function load() {
     const res = await fetch('/api/admin/coupons');
@@ -38,9 +40,9 @@ export default function AdminCouponsPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete coupon "${name}"? This cannot be undone.`)) return;
+  async function executeDelete(id: string) {
     setDeleting(id);
+    setPendingDelete(null);
     await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
     setCoupons((c) => c.filter((x) => x.id !== id));
     setDeleting(null);
@@ -53,6 +55,15 @@ export default function AdminCouponsPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        variant="danger"
+        title={`Delete "${pendingDelete?.name}"?`}
+        message="This coupon will be permanently deleted and cannot be undone."
+        confirmLabel="Yes, delete"
+        onConfirm={() => pendingDelete && executeDelete(pendingDelete.id)}
+        onCancel={() => setPendingDelete(null)}
+      />
       {/* Top nav */}
       <div className="bg-[#1A1A1A] border-b border-white/5 px-4 sm:px-8">
         <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
@@ -151,7 +162,7 @@ export default function AdminCouponsPage() {
                               <Pencil className="h-3 w-3" /> Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(c.id, c.name)}
+                              onClick={() => setPendingDelete({ id: c.id, name: c.name })}
                               disabled={deleting === c.id}
                               className="flex items-center gap-1.5 text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer disabled:opacity-50"
                             >
@@ -210,7 +221,7 @@ export default function AdminCouponsPage() {
                         <Pencil className="h-3 w-3" /> Edit
                       </button>
                       <button
-                        onClick={() => handleDelete(c.id, c.name)}
+                        onClick={() => setPendingDelete({ id: c.id, name: c.name })}
                         disabled={deleting === c.id}
                         className="flex-1 flex items-center justify-center gap-1.5 border border-red-100 rounded-xl py-2 text-xs font-medium text-red-400 hover:text-red-600 transition-all cursor-pointer disabled:opacity-50"
                       >

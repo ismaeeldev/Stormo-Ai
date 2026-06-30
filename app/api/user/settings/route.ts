@@ -25,6 +25,8 @@ export async function GET() {
       totalSales: user?.totalSales || 0,
       nextBillingDate: sub?.currentPeriodEnd || null,
       cancelAtPeriodEnd: sub?.cancelAtPeriodEnd || false,
+      trialEndsAt: user?.trialEndsAt?.toISOString() ?? null,
+      growthUnlocked: user?.growthUnlocked ?? false,
     });
   } catch (error) {
     console.error('Fetch settings data error:', error);

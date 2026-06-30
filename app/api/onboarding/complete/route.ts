@@ -5,6 +5,7 @@ import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { createStoreProfile, getUserById } from '@/lib/db/queries';
 import { generateDailyAction } from '@/lib/ai/action-generator';
+import { triggerOnboardingComplete } from '@/lib/email/triggers';
 
 export async function POST(request: Request) {
   try {
@@ -68,6 +69,20 @@ export async function POST(request: Request) {
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId));
+
+    // Fire onboarding complete email (non-blocking)
+    try {
+      const [userRecord] = await db
+        .select({ email: users.email, name: users.name })
+        .from(users)
+        .where(eq(users.id, userId));
+      if (userRecord?.email) {
+        triggerOnboardingComplete(userRecord.email, userRecord.name ?? 'Founder')
+          .catch((e) => console.error('[Onboarding Complete] email trigger failed:', e));
+      }
+    } catch (e) {
+      console.error('[Onboarding Complete] failed to fetch user for email:', e);
+    }
 
     // Generate the first daily action plan in background so it's ready when they land
     try {

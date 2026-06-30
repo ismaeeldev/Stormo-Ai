@@ -1,7 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Clipboard, ClipboardCheck, Check, CalendarDays, HelpCircle, X } from 'lucide-react';
+import {
+  Loader2, Clipboard, ClipboardCheck, Check, CalendarDays,
+  AlertTriangle, Clock, Zap,
+  Camera, Globe, Mail, Search, Users, Settings,
+} from 'lucide-react';
+
+/* ── Constants ──────────────────────────────────────────────────────────── */
 
 const LOADING_MSGS = [
   'Evaluating your marketing channel history...',
@@ -10,6 +16,34 @@ const LOADING_MSGS = [
   'Selecting the highest-impact action for today...',
   'Preparing your copy template...',
 ];
+
+const CHANNEL_CONFIG: Record<string, {
+  Icon: React.ElementType;
+  pill: string;
+  dot: string;
+}> = {
+  instagram:  { Icon: Camera,      pill: 'bg-pink-50 text-pink-700 border border-pink-100',       dot: 'bg-pink-500'    },
+  reddit:     { Icon: Globe,       pill: 'bg-orange-50 text-orange-700 border border-orange-100', dot: 'bg-orange-500'  },
+  email:      { Icon: Mail,        pill: 'bg-blue-50 text-blue-700 border border-blue-100',        dot: 'bg-blue-500'    },
+  seo:        { Icon: Search,      pill: 'bg-green-50 text-green-700 border border-green-100',     dot: 'bg-green-500'   },
+  influencer: { Icon: Users,       pill: 'bg-purple-50 text-purple-700 border border-purple-100', dot: 'bg-purple-500'  },
+  optimize:   { Icon: Settings,    pill: 'bg-gray-100 text-gray-600 border border-gray-200',       dot: 'bg-gray-500'    },
+  planning:   { Icon: CalendarDays,pill: 'bg-blue-50 text-blue-700 border border-blue-100',        dot: 'bg-blue-500'    },
+  paid_ads:   { Icon: Zap,         pill: 'bg-amber-50 text-amber-700 border border-amber-100',    dot: 'bg-amber-500'   },
+};
+const DEFAULT_CHANNEL = { Icon: Globe, pill: 'bg-orange-tint text-primary border border-orange-100', dot: 'bg-primary' };
+
+const EFFORT_MAP: Record<string, string> = {
+  community: '~25 min', content: '~35 min', outreach: '~45 min',
+  seo: '~30 min', paid_ads: '~20 min',
+};
+
+const CATEGORY_MAP: Record<string, string> = {
+  community: 'Community', content: 'Content', outreach: 'Outreach',
+  seo: 'SEO', paid_ads: 'Paid Ads',
+};
+
+/* ── Types ──────────────────────────────────────────────────────────────── */
 
 interface Action {
   id: string;
@@ -22,19 +56,78 @@ interface Action {
   scheduledFor: string;
 }
 
-export default function DailyActionCard() {
-  const [action, setAction] = useState<Action | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCopied, setIsCopied] = useState(false);
-  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+/* ── Skeleton ────────────────────────────────────────────────────────────── */
 
-  const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+function SkeletonCard({ msgIdx }: { msgIdx: number }) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 shimmer rounded-full" />
+          <div className="h-3.5 w-40 shimmer rounded" />
+        </div>
+        <div className="h-6 w-28 shimmer rounded-full" />
+      </div>
+
+      {/* Meta chips */}
+      <div className="px-6 pt-5 flex flex-wrap gap-2">
+        {[20, 16, 16, 22].map((w, i) => (
+          <div key={i} className={`h-6 shimmer rounded-full`} style={{ width: `${w * 4}px` }} />
+        ))}
+      </div>
+
+      {/* Title + description */}
+      <div className="px-6 pt-4 pb-0 space-y-3">
+        <div className="h-7 w-4/5 shimmer rounded" />
+        <div className="border-l-2 border-gray-100 pl-4 space-y-2 py-1">
+          <div className="h-4 w-full shimmer rounded" />
+          <div className="h-4 w-11/12 shimmer rounded" />
+          <div className="h-4 w-3/4 shimmer rounded" />
+        </div>
+      </div>
+
+      {/* Template box */}
+      <div className="px-6 pt-5 pb-6">
+        <div className="rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 shimmer rounded-full" />
+              <div className="h-2.5 w-2.5 shimmer rounded-full" />
+              <div className="h-2.5 w-2.5 shimmer rounded-full" />
+            </div>
+            <div className="h-3 w-16 shimmer rounded" />
+          </div>
+          <div className="p-5 space-y-2">
+            {[1, 0.94, 1, 0.88, 1, 0.78, 0.91].map((w, i) => (
+              <div key={i} className="h-3 shimmer rounded" style={{ width: `${w * 100}%` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* AI bar */}
+      <div className="border-t border-gray-100 px-6 py-3.5 flex items-center gap-3 bg-gray-50/50">
+        <Loader2 className="h-3.5 w-3.5 text-primary animate-spin flex-shrink-0" />
+        <p className="text-sm text-subtle transition-all duration-500">{LOADING_MSGS[msgIdx]}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main component ──────────────────────────────────────────────────────── */
+
+export default function DailyActionCard() {
+  const [action, setAction]           = useState<Action | null>(null);
+  const [isLoading, setIsLoading]     = useState(true);
+  const [isCopied, setIsCopied]       = useState(false);
+  const [loadingMsgIdx, setMsgIdx]    = useState(0);
+  const [isCompleting, setCompleting] = useState(false);
+  const [error, setError]             = useState('');
 
   useEffect(() => {
-    if (!isLoading) { setLoadingMsgIdx(0); return; }
-    const t = setInterval(() => setLoadingMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 1800);
+    if (!isLoading) { setMsgIdx(0); return; }
+    const t = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 1800);
     return () => clearInterval(t);
   }, [isLoading]);
 
@@ -44,16 +137,18 @@ export default function DailyActionCard() {
       const res = await fetch('/api/actions/today');
       if (!res.ok) throw new Error('Failed to fetch action');
       const data = await res.json();
-      
-      if (data) {
-        setAction(data);
+      if (!data) {
+        generateAction();
+      } else if (data.status === 'completed' || data.status === 'skipped') {
+        // Today's work is already done — show "All caught up" without generating
+        setAction(null);
         setIsLoading(false);
       } else {
-        // If no action exists for today, trigger generation automatically
-        generateAction();
+        setAction(data);
+        setIsLoading(false);
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred loading today\'s action.');
+      setError(err.message || "An error occurred loading today's action.");
       setIsLoading(false);
     }
   };
@@ -61,106 +156,73 @@ export default function DailyActionCard() {
   const generateAction = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/actions/generate', {
-        method: 'POST',
-      });
-      
-      if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || 'Failed to generate action');
-      }
-      
-      const data = await res.json();
-      setAction(data);
+      const res = await fetch('/api/actions/generate', { method: 'POST' });
+      if (!res.ok) { const j = await res.json(); throw new Error(j.error || 'Failed to generate'); }
+      setAction(await res.json());
     } catch (err: any) {
-      setError(err.message || 'An error occurred generating today\'s action.');
-    } finally {
-      setIsLoading(false);
-    }
+      setError(err.message || "An error occurred generating today's action.");
+    } finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    fetchTodayAction();
-  }, []);
+  useEffect(() => { fetchTodayAction(); }, []);
 
   const handleCopy = async () => {
     if (!action?.content) return;
-    try {
-      await navigator.clipboard.writeText(action.content);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy text: ', err);
-    }
+    try { await navigator.clipboard.writeText(action.content); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }
+    catch {}
   };
 
   const handlePostpone = async () => {
     if (!action) return;
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/actions/${action.id}/postpone`, {
-        method: 'PATCH',
-      });
-      if (!res.ok) throw new Error('Failed to postpone action');
+      const res = await fetch(`/api/actions/${action.id}/postpone`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Failed to postpone');
       setAction(null);
       window.dispatchEvent(new CustomEvent('stormo:action-updated'));
       fetchTodayAction();
-    } catch (err: any) {
-      setError(err.message || 'Failed to postpone action');
-      setIsLoading(false);
-    }
+    } catch (err: any) { setError(err.message || 'Failed to postpone'); setIsLoading(false); }
   };
 
-  const handleCompleteSubmit = async (outcomeSignal: string) => {
+  const handleComplete = async () => {
     if (!action) return;
-    setIsSubmitting(true);
-    setError('');
-
+    setCompleting(true); setError('');
     try {
       const res = await fetch(`/api/actions/${action.id}/complete`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ outcomeSignal }),
+        body: JSON.stringify({ outcomeSignal: null }),
       });
-
       if (!res.ok) throw new Error('Failed to complete action');
-
-      setShowModal(false);
-      setAction(null);
-      // Reload page state or next action
-      fetchTodayAction();
-      window.location.reload(); // Force full reload to update parent stat numbers
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit action outcome');
-    } finally {
-      setIsSubmitting(false);
-    }
+      window.dispatchEvent(new CustomEvent('stormo:action-completed', { detail: { actionId: action.id } }));
+      setAction(null); // Shows "All caught up" immediately — no re-fetch needed
+    } catch (err: any) { setError(err.message || 'Failed to complete action'); }
+    finally { setCompleting(false); }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary overflow-hidden min-h-[350px] flex flex-col justify-center items-center p-8 text-center space-y-4">
-        <Loader2 className="h-10 w-10 text-primary animate-spin" />
-        <div>
-          <h3 className="font-bold text-dark text-lg">Building today's action...</h3>
-          <p className="text-subtle text-sm mt-1 max-w-sm transition-all duration-300">
-            {LOADING_MSGS[loadingMsgIdx]}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  /* ── Derived ── */
+  const channelCfg   = action ? (CHANNEL_CONFIG[action.channel] ?? DEFAULT_CHANNEL) : DEFAULT_CHANNEL;
+  const ChannelIcon  = channelCfg.Icon;
+  const effort       = action ? (EFFORT_MAP[action.actionType] ?? '~30 min') : '';
+  const category     = action ? (CATEGORY_MAP[action.actionType] ?? action.actionType) : '';
+  const scheduledStr = action
+    ? new Date(action.scheduledFor).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+    : '';
+
+  /* ── States ── */
+  if (isLoading) return <SkeletonCard msgIdx={loadingMsgIdx} />;
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary p-8 text-center space-y-4">
-        <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
-        <h3 className="font-bold text-dark text-lg">Action Generation Paused</h3>
-        <p className="text-subtle text-sm max-w-md mx-auto">{error}</p>
-        <button
-          onClick={fetchTodayAction}
-          className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-4 py-2 text-sm transition-colors cursor-pointer"
-        >
+      <div className="bg-white rounded-2xl border border-gray-100 shadow p-10 flex flex-col items-center text-center gap-4 fade-up">
+        <div className="h-12 w-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+          <AlertTriangle className="h-6 w-6 text-destructive" />
+        </div>
+        <div>
+          <h3 className="font-bold text-dark">Generation paused</h3>
+          <p className="text-subtle text-sm mt-1 max-w-sm">{error}</p>
+        </div>
+        <button onClick={fetchTodayAction} className="bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-xl px-5 py-2.5 text-sm transition-colors cursor-pointer">
           Try Again
         </button>
       </div>
@@ -169,173 +231,147 @@ export default function DailyActionCard() {
 
   if (!action) {
     return (
-      <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary p-8 text-center space-y-4 flex flex-col items-center justify-center min-h-[300px]">
-        <Check className="h-12 w-12 text-green-600 bg-green-50 p-2 rounded-full border border-green-200" />
-        <h3 className="font-bold text-dark text-lg">All caught up for today!</h3>
-        <p className="text-subtle text-sm max-w-sm">
-          You have successfully completed or rescheduled all daily tasks. Check back tomorrow for your next customized growth plan.
-        </p>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow p-10 flex flex-col items-center text-center gap-4 fade-up">
+        <div className="h-14 w-14 rounded-full bg-green-50 border border-green-200 flex items-center justify-center">
+          <Check className="h-7 w-7 text-green-600" />
+        </div>
+        <div>
+          <h3 className="font-bold text-dark text-lg">All caught up!</h3>
+          <p className="text-subtle text-sm mt-1 max-w-sm">You've completed all tasks for today. Come back tomorrow for your next plan.</p>
+        </div>
       </div>
     );
   }
 
+  /* ── Render ── */
   return (
     <>
-      <div className="bg-white rounded-xl shadow-lg border-t-3 border-primary overflow-hidden border border-gray-100 flex flex-col">
-        {/* Header */}
-        <div className="border-b border-gray-100 bg-gray-50/50 px-6 py-5 flex flex-wrap justify-between items-center gap-3">
-          <h2 className="text-lg font-bold text-dark">Today's Action Plan</h2>
-          <div className="flex gap-2">
-            <span className="px-2.5 py-1 text-xs font-bold text-primary bg-orange-tint rounded-full uppercase tracking-wider">
-              {action.channel}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow overflow-hidden flex flex-col fade-up">
+        <div className="h-[3px] bg-primary w-full flex-shrink-0" />
+
+        {/* ── Card header ── */}
+        <div className="px-6 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* Live indicator */}
+            <span className="relative flex h-2 w-2 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
             </span>
-            <span className="px-2.5 py-1 text-xs font-semibold text-subtle bg-gray-100 rounded-full capitalize">
-              {action.actionType.replace('_', ' ')}
-            </span>
+            <h2 className="text-[11px] font-black text-dark uppercase tracking-[0.14em]">
+              Today's Action Plan
+            </h2>
           </div>
+          <span className="text-[11px] font-semibold text-subtle bg-gray-50 border border-gray-100 rounded-full px-3 py-1 flex-shrink-0">
+            {scheduledStr}
+          </span>
         </div>
 
-        {/* Content Body */}
-        <div className="p-6 md:p-8 space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-dark leading-tight">{action.title}</h3>
-            <p className="text-sm text-subtle mt-1.5 whitespace-pre-wrap">{action.description}</p>
+        {/* ── Body ── */}
+        <div className="px-6 lg:px-8 pt-5 pb-6 flex-1 flex flex-col gap-5">
+
+          {/* Meta chips */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${channelCfg.pill}`}>
+              <ChannelIcon className="h-3 w-3" />
+              {action.channel.charAt(0).toUpperCase() + action.channel.slice(1)}
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 rounded-full text-[11px] font-semibold text-subtle capitalize">
+              {category}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-full text-[11px] font-semibold text-subtle">
+              <Clock className="h-3 w-3" />
+              {effort}
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 border border-orange-100 rounded-full text-[11px] font-bold text-primary">
+              <Zap className="h-3 w-3" />
+              High Priority
+            </span>
           </div>
 
+          {/* Title */}
+          <h3 className="text-[1.3rem] font-extrabold text-dark leading-snug -mt-1">
+            {action.title}
+          </h3>
+
+          {/* Description with left accent */}
+          <div className="border-l-[3px] border-primary/25 pl-4 -mt-1">
+            <p className="text-sm text-subtle leading-[1.75] whitespace-pre-wrap">
+              {action.description}
+            </p>
+          </div>
+
+          {/* Copy template — "editor" style */}
           {action.content && (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-dark uppercase tracking-wider">Generated Copy Template</span>
+            <div className="rounded-xl border border-gray-200 overflow-hidden">
+              {/* Editor toolbar */}
+              <div className="flex items-center justify-between px-4 py-2.5 bg-[#F8F9FA] border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-[11px] w-[11px] rounded-full bg-red-400/90" />
+                    <span className="h-[11px] w-[11px] rounded-full bg-yellow-400/90" />
+                    <span className="h-[11px] w-[11px] rounded-full bg-green-400/90" />
+                  </div>
+                  <span className="text-[10px] font-bold text-subtle/80 uppercase tracking-[0.12em]">
+                    Copy Template
+                  </span>
+                </div>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-[#C4531A] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-[#C4531A] transition-colors cursor-pointer"
                 >
-                  {isCopied ? (
-                    <>
-                      <ClipboardCheck className="h-4 w-4" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Clipboard className="h-4 w-4" />
-                      Copy Template
-                    </>
-                  )}
+                  {isCopied
+                    ? <><ClipboardCheck className="h-3.5 w-3.5" /> Copied!</>
+                    : <><Clipboard className="h-3.5 w-3.5" /> Copy all</>}
                 </button>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 max-h-72 overflow-y-auto">
+
+              {/* Content area */}
+              <div className="bg-white p-5 max-h-56 overflow-y-auto">
                 <ContentDisplay content={action.content} />
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer Buttons */}
-        <div className="border-t border-gray-100 px-6 py-5 bg-gray-50/50 flex flex-wrap gap-4">
+        {/* ── Footer ── */}
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex flex-wrap gap-3">
           <button
-            onClick={() => setShowModal(true)}
-            className="flex-1 bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-lg px-6 py-3.5 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md min-w-[150px]"
+            onClick={handleComplete}
+            disabled={isCompleting}
+            className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 bg-primary hover:bg-[#C4531A] active:scale-[0.98] text-white font-bold rounded-xl py-3 px-5 text-sm transition-all shadow-sm cursor-pointer disabled:opacity-70"
           >
-            <Check className="h-5 w-5" />
-            Mark Complete
+            {isCompleting
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <Check className="h-4 w-4" />
+            }
+            {isCompleting ? 'Completing…' : 'Mark Complete'}
           </button>
           <button
             onClick={handlePostpone}
-            className="flex-1 border border-primary text-primary hover:bg-orange-tint font-semibold rounded-lg px-6 py-3.5 transition-all flex items-center justify-center gap-2 cursor-pointer min-w-[150px]"
+            className="flex-1 min-w-[140px] inline-flex items-center justify-center gap-2 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-dark font-bold rounded-xl py-3 px-5 text-sm transition-all cursor-pointer"
           >
-            <CalendarDays className="h-5 w-5" />
-            Do This Tomorrow
+            <CalendarDays className="h-4 w-4 text-subtle" />
+            Do Tomorrow
           </button>
         </div>
       </div>
 
-      {/* Outcome Selection Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setShowModal(false)}></div>
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-primary">
-                <HelpCircle className="h-6 w-6" />
-                <h3 className="font-bold text-dark text-lg">How did it go?</h3>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-subtle hover:text-dark p-1 rounded-lg hover:bg-gray-100"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <p className="text-sm text-subtle">
-              Help Stormo calibrate! Select the option that best describes the result or feedback from this daily action.
-            </p>
-
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                { label: 'Got Traffic', value: 'Got Traffic', desc: 'Acquired store views or clicks' },
-                { label: 'Good Engagement', value: 'Good Engagement', desc: 'Received likes, comments, or emails' },
-                { label: 'No Response', value: 'No Response', desc: 'Action completed but no feedback received' },
-                { label: 'Too Difficult', value: 'Too Difficult', desc: 'Too time-consuming or complex to complete' },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleCompleteSubmit(opt.value)}
-                  disabled={isSubmitting}
-                  className="w-full text-left p-4 rounded-xl border border-gray-200 hover:border-primary hover:bg-orange-tint transition-all cursor-pointer flex justify-between items-center disabled:opacity-50"
-                >
-                  <div>
-                    <p className="font-semibold text-dark text-sm">{opt.label}</p>
-                    <p className="text-xs text-subtle mt-0.5">{opt.desc}</p>
-                  </div>
-                  <Check className="h-5 w-5 text-primary opacity-0 hover:opacity-100 transition-opacity" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 }
 
+/* ── ContentDisplay ──────────────────────────────────────────────────────── */
+
 function ContentDisplay({ content }: { content: string }) {
   const HEADER_RE = /^(Story\s+\d+|Subject|Hook|Caption|Headline|Section|Part|Day\s+\d+|Step\s+\d+|Option\s+\d+|Post\s+\d+|Email\s+\d+|Pin\s+\d+|Intro|Outro|CTA|Body|Opening|Closing)[:\s]/i;
   return (
-    <div className="space-y-0.5 text-sm text-[#2D2D2D] leading-relaxed font-sans">
+    <div className="text-sm text-[#2D2D2D] leading-relaxed font-sans space-y-0.5">
       {content.split('\n').map((line, i) => {
         if (!line.trim()) return <div key={i} className="h-2" />;
-        if (HEADER_RE.test(line.trim())) {
-          return (
-            <p key={i} className="font-bold text-primary mt-4 first:mt-0 text-sm">
-              {line}
-            </p>
-          );
-        }
+        if (HEADER_RE.test(line.trim()))
+          return <p key={i} className="font-bold text-primary mt-3 first:mt-0 text-[13px]">{line}</p>;
         return <p key={i}>{line}</p>;
       })}
     </div>
-  );
-}
-
-// Simple internal alert helper
-function AlertTriangle(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
   );
 }

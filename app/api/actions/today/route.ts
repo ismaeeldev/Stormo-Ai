@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { getTodaysAction } from '@/lib/db/queries';
 import { db } from '@/lib/db';
 import { actions } from '@/lib/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, inArray } from 'drizzle-orm';
 
 export async function GET() {
   try {
@@ -13,45 +13,43 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Check if today's work is already done — return the completed action so
+    //    the client can show "All caught up" without triggering a generate call.
+    const [completedToday] = await db
+      .select()
+      .from(actions)
+      .where(
+        and(
+          eq(actions.userId, userId),
+          eq(actions.scheduledFor, today),
+          eq(actions.status, 'completed')
+        )
+      )
+      .limit(1);
+
+    if (completedToday) return NextResponse.json(completedToday);
+
+    // 2. Look for an active (scheduled/pending) action for today or the nearest future date
     let action = await getTodaysAction(userId);
 
     if (!action) {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // 1. Try to find a scheduled action for today
-      const [scheduledToday] = await db
+      const [earliest] = await db
         .select()
         .from(actions)
         .where(
           and(
             eq(actions.userId, userId),
-            eq(actions.status, 'scheduled'),
-            eq(actions.scheduledFor, today)
+            inArray(actions.status, ['scheduled', 'pending'])
           )
-        );
+        )
+        .orderBy(asc(actions.scheduledFor))
+        .limit(1);
 
-      if (scheduledToday) {
-        action = scheduledToday;
-      } else {
-        // 2. Otherwise get the earliest scheduled action
-        const [earliestScheduled] = await db
-          .select()
-          .from(actions)
-          .where(
-            and(
-              eq(actions.userId, userId),
-              eq(actions.status, 'scheduled')
-            )
-          )
-          .orderBy(asc(actions.scheduledFor))
-          .limit(1);
-        
-        if (earliestScheduled) {
-          action = earliestScheduled;
-        }
-      }
+      if (earliest) action = earliest;
     }
-    
+
     return NextResponse.json(action);
   } catch (error: any) {
     console.error('[Get Today Action Route] Error:', error);

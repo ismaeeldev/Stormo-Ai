@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import { Calendar, Share2, ArrowLeft, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -128,8 +130,7 @@ export default async function BlogPostPage({ params }: Props) {
             alt={post.title || ''}
             className="object-cover w-full h-full"
             loading="eager"
-            // @ts-ignore
-            fetchpriority="high"
+            fetchPriority="high"
           />
         </div>
       )}

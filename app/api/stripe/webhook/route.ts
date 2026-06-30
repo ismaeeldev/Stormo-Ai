@@ -210,13 +210,14 @@ export async function POST(request: Request) {
           break;
         }
 
-        // Update users table
+        // Update users table — record cancelledAt for 7-day re-engagement cron
         await db
           .update(users)
           .set({
             subscriptionTier: 'free',
             subscriptionStatus: 'canceled',
             subscriptionId: null,
+            cancelledAt: new Date(),
             updatedAt: new Date(),
           })
           .where(eq(users.id, dbUser.id));

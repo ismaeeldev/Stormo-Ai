@@ -1,186 +1,142 @@
-import React from 'react';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { db } from '@/lib/db';
-import { actions, weeklyContent, outreachContacts } from '@/lib/db/schema';
-import { eq, and, gte, desc, count } from 'drizzle-orm';
-import { Zap, FileText, Users, Trophy, Loader2 } from 'lucide-react';
+import { actions, users } from '@/lib/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
+import { Flame, Calendar, ShoppingBag } from 'lucide-react';
 import type { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: "Today's Action | Stormo.io Dashboard",
-  description: "Complete your daily marketing action and scale your store growth.",
-};
-
-// Streak Calculation Helper
-function calculateStreak(completedDates: Date[]): number {
-  if (completedDates.length === 0) return 0;
-
-  // Convert to local date strings (YYYY-MM-DD) and remove duplicates
-  const uniqueDates = Array.from(
-    new Set(completedDates.filter(Boolean).map((d) => d.toISOString().split('T')[0]))
-  ).sort((a, b) => b.localeCompare(a));
-
-  if (uniqueDates.length === 0) return 0;
-
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-  // If the latest completion isn't today or yesterday, streak is broken (0)
-  if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) {
-    return 0;
-  }
-
-  let streak = 0;
-  let currentDate = new Date(uniqueDates[0]);
-
-  for (let i = 0; i < uniqueDates.length; i++) {
-    const expectedDateStr = currentDate.toISOString().split('T')[0];
-    if (uniqueDates[i] === expectedDateStr) {
-      streak++;
-      // Move to previous day
-      currentDate.setDate(currentDate.getDate() - 1);
-    } else {
-      break;
-    }
-  }
-
-  return streak;
-}
 
 import DailyActionCard from '@/components/dashboard/DailyActionCard';
 import ActionHistoryList from '@/components/dashboard/ActionHistoryList';
 import MilestoneConfetti from '@/components/dashboard/MilestoneConfetti';
+import SalesCounter from '@/components/dashboard/SalesCounter';
+import ProgressTracker from '@/components/dashboard/ProgressTracker';
+import ActionContextPanel from '@/components/dashboard/ActionContextPanel';
+import DashboardBanner from '@/components/dashboard/DashboardBanner';
+import NotificationPermissionBanner from '@/components/dashboard/NotificationPermissionBanner';
+import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard';
+import InsightCard from '@/components/dashboard/InsightCard';
+
+export const metadata: Metadata = {
+  title: "Today's Action | Stormo.io",
+  description: 'Complete your daily marketing action and scale your store growth.',
+};
+
+function calculateStreak(completedDates: Date[]): number {
+  if (completedDates.length === 0) return 0;
+  const unique = Array.from(
+    new Set(completedDates.filter(Boolean).map((d) => d.toISOString().split('T')[0]))
+  ).sort((a, b) => b.localeCompare(a));
+  if (unique.length === 0) return 0;
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split('T')[0];
+  if (unique[0] !== today && unique[0] !== yesterday) return 0;
+  let streak = 0;
+  const cur = new Date(unique[0]);
+  for (let i = 0; i < unique.length; i++) {
+    if (unique[i] === cur.toISOString().split('T')[0]) { streak++; cur.setDate(cur.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
 
 export default async function DashboardPage() {
   const session = await auth();
-  if (!session || !session.user || !session.user.id) {
-    redirect('/login');
-  }
+  if (!session?.user?.id) redirect('/login');
 
   const userId = session.user.id;
+  const name = session.user.name?.split(' ')[0] || 'Founder';
 
-  // 1. Fetch counts for the Quick Stats Row
-  const [completedActionsResult] = await db
-    .select({ value: count() })
-    .from(actions)
-    .where(and(eq(actions.userId, userId), eq(actions.status, 'completed')));
-  const completedActionsCount = completedActionsResult?.value || 0;
+  const [completedActions, userStats] = await Promise.all([
+    db.select({ completedAt: actions.completedAt })
+      .from(actions)
+      .where(and(eq(actions.userId, userId), eq(actions.status, 'completed')))
+      .orderBy(desc(actions.completedAt)),
+    db.select({ totalSales: users.totalSales, createdAt: users.createdAt })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
+  ]);
 
-  const [contentResult] = await db
-    .select({ value: count() })
-    .from(weeklyContent)
-    .where(eq(weeklyContent.userId, userId));
-  const contentCount = contentResult?.value || 0;
+  const userRecord = userStats[0];
+  const streak = calculateStreak(
+    completedActions.map((a) => a.completedAt).filter((d): d is Date => d !== null)
+  );
+  const totalSales = userRecord?.totalSales ?? 0;
+  const daysAsMember = userRecord?.createdAt
+    ? Math.max(1, Math.floor((Date.now() - new Date(userRecord.createdAt).getTime()) / 86_400_000))
+    : 1;
+  const plan = ((session.user as any).subscriptionTier ?? 'starter') as string;
 
-  const [outreachResult] = await db
-    .select({ value: count() })
-    .from(outreachContacts)
-    .where(eq(outreachContacts.userId, userId));
-  const outreachCount = outreachResult?.value || 0;
-
-  // 2. Fetch completed actions to calculate streak
-  const completedActions = await db
-    .select({ completedAt: actions.completedAt })
-    .from(actions)
-    .where(and(eq(actions.userId, userId), eq(actions.status, 'completed')))
-    .orderBy(desc(actions.completedAt));
-
-  const completedDates = completedActions
-    .map((a) => a.completedAt)
-    .filter((date): date is Date => date !== null);
-  
-  const streak = calculateStreak(completedDates);
-
-  // 3. Progress indicator: actions completed this calendar month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-
-  const [actionsThisMonthResult] = await db
-    .select({ value: count() })
-    .from(actions)
-    .where(
-      and(
-        eq(actions.userId, userId),
-        eq(actions.status, 'completed'),
-        gte(actions.completedAt, startOfMonth)
-      )
-    );
-  const actionsThisMonthCount = actionsThisMonthResult?.value || 0;
+  const now = new Date();
+  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dateLabel = `${DAYS[now.getDay()]}, ${MONS[now.getMonth()]} ${now.getDate()}`;
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-6">
       <MilestoneConfetti />
-      {/* Welcome & Streak Banner */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+      {/* ── Welcome header ──────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-dark tracking-tight">
-            Welcome back, {session.user.name || 'Founder'}!
+          <p className="text-[11px] font-bold text-subtle uppercase tracking-[0.12em] mb-1.5">
+            {dateLabel}
+          </p>
+          <h1 className="text-2xl sm:text-[1.75rem] font-extrabold text-dark tracking-tight leading-none">
+            Welcome back, <span className="text-primary">{name}</span>
           </h1>
-          <p className="text-subtle text-sm mt-1">Here is your automated marketing schedule for today.</p>
-        </div>
-        <div className="flex items-center gap-3 bg-white shadow-md rounded-xl p-4 border border-gray-100">
-          <Trophy className="h-6 w-6 text-primary" />
-          <div>
-            <p className="text-xs font-semibold text-subtle uppercase">Streak Counter</p>
-            <p className="text-sm font-bold text-dark mt-0.5">
-              {streak}-day streak! Keep it up.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        {/* Stat 1: Actions Completed */}
-        <div className="bg-white rounded-xl shadow-md p-6 border-t-3 border-primary flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-subtle uppercase tracking-wider">Actions Completed</p>
-            <p className="text-3xl font-black text-primary mt-2">{completedActionsCount}</p>
-          </div>
-          <Zap className="h-10 w-10 text-primary/10 fill-primary/5" />
+          <p className="text-sm text-subtle mt-1.5">Your personalised marketing plan is ready.</p>
         </div>
 
-        {/* Stat 2: Content Pieces */}
-        <div className="bg-white rounded-xl shadow-md p-6 border-t-3 border-primary flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-subtle uppercase tracking-wider">Content Pieces</p>
-            <p className="text-3xl font-black text-primary mt-2">{contentCount}</p>
-          </div>
-          <FileText className="h-10 w-10 text-primary/10 fill-primary/5" />
-        </div>
-
-        {/* Stat 3: Outreach Contacts */}
-        <div className="bg-white rounded-xl shadow-md p-6 border-t-3 border-primary flex items-center justify-between">
-          <div>
-            <p className="text-xs font-bold text-subtle uppercase tracking-wider">Outreach Contacts</p>
-            <p className="text-3xl font-black text-primary mt-2">{outreachCount}</p>
-          </div>
-          <Users className="h-10 w-10 text-primary/10 fill-primary/5" />
-        </div>
-      </div>
-
-      {/* Monthly Progress Bar */}
-      <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <div className="flex justify-between items-baseline mb-2">
-          <h3 className="font-bold text-dark text-sm">Monthly Action Goal</h3>
-          <span className="text-xs font-semibold text-primary">
-            Action {actionsThisMonthCount} of 30 this month
+        {/* Status badges */}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:pt-1">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-tint border border-orange-200 text-primary text-[11px] font-bold rounded-lg capitalize">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block" />
+            {plan} Plan
           </span>
-        </div>
-        <div className="w-full bg-gray-100 rounded-full h-3">
-          <div
-            className="bg-primary h-3 rounded-full transition-all duration-500"
-            style={{ width: `${Math.min((actionsThisMonthCount / 30) * 100, 100)}%` }}
-          ></div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-subtle text-[11px] font-semibold rounded-lg">
+            <Calendar className="h-3 w-3" />
+            {daysAsMember}d active
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-subtle text-[11px] font-semibold rounded-lg">
+            <ShoppingBag className="h-3 w-3" />
+            {totalSales} sales
+          </span>
+          {streak > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-tint border border-orange-200 text-primary text-[11px] font-bold rounded-lg">
+              <Flame className="h-3 w-3" />
+              {streak}d streak
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Today's Action Card */}
-      <DailyActionCard />
+      {/* ── Notification permission request (first visit after onboarding) ── */}
+      <NotificationPermissionBanner />
 
-      {/* Action History Section */}
+      {/* ── Weekly summary card (Mon–Wed only, dismissible) ─────────────── */}
+      <WeeklySummaryCard />
+
+      {/* ── AI insight card (latest unread insight) ──────────────────────── */}
+      <InsightCard />
+
+      {/* ── Context-aware banner ────────────────────────────────────────── */}
+      <DashboardBanner />
+
+      {/* ── Progress cards ──────────────────────────────────────────────── */}
+      <ProgressTracker />
+
+      {/* ── Action Plan (70%) + Sales Tracker (30%) ────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-5 items-start">
+        <DailyActionCard />
+        <div className="flex flex-col gap-5">
+          <SalesCounter />
+          <ActionContextPanel />
+        </div>
+      </div>
+
+      {/* ── Action History ──────────────────────────────────────────────── */}
       <ActionHistoryList />
     </div>
   );
