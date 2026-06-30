@@ -1,0 +1,22 @@
+name: Cron — Trial Reminders
+
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call trial-reminders cron endpoint
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.APP_URL }}/api/cron/trial-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+          echo "Response status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Cron endpoint returned $STATUS — failing job"
+            exit 1
+          fi
