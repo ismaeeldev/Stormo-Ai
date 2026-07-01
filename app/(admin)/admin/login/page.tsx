@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -10,6 +10,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,14 +71,24 @@ export default function AdminLoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-dark mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                className="w-full border border-gray-200/80 rounded-xl px-4 py-3 text-base text-dark bg-white/50 placeholder-gray-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full border border-gray-200/80 rounded-xl px-4 py-3 pr-11 text-base text-dark bg-white/50 placeholder-gray-400 focus:bg-white focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 flex items-center px-3.5 text-gray-400 hover:text-dark transition-colors cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                </button>
+              </div>
             </div>
 
             <button

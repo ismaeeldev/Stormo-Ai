@@ -7,11 +7,12 @@ import { useSession } from 'next-auth/react';
 import { Mail, RefreshCw, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function VerifyEmailRequiredPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const router = useRouter();
   const email = session?.user?.email ?? '';
 
-  // Poll every 4 seconds to detect when the user verifies in another tab
+  // Poll every 4 seconds: force a JWT refresh so the DB value is re-read.
+  // update() triggers the jwt callback which always re-queries the DB.
   useEffect(() => {
     let attempts = 0;
     const MAX = 150; // 10 minutes at 4s intervals
@@ -19,9 +20,8 @@ export default function VerifyEmailRequiredPage() {
       attempts++;
       if (attempts > MAX) { clearInterval(timer); return; }
       try {
-        const res = await fetch('/api/auth/session');
-        const s = await res.json();
-        if (s?.user?.emailVerified) {
+        const updated = await update();
+        if (updated?.user?.isEmailVerified) {
           clearInterval(timer);
           router.push('/dashboard');
         }

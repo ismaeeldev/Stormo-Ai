@@ -268,7 +268,7 @@ export default function OnboardingPage() {
     _setSkippedQuestionIds(updated);
   };
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<'idle' | 'building' | 'success'>('idle');
   const [error, setError] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -560,7 +560,7 @@ export default function OnboardingPage() {
   };
 
   const handleFinish = async () => {
-    setIsSubmitting(true);
+    setSubmitPhase('building');
     setError('');
 
     try {
@@ -574,25 +574,27 @@ export default function OnboardingPage() {
         throw new Error('Failed to complete onboarding on server');
       }
 
-      // Explode confetti!
+      // Plan built and email sent — switch to success state immediately
+      setSubmitPhase('success');
+      localStorage.removeItem('stormo_onboarding_state');
+
+      // Explode confetti now that plan is actually ready
       confetti({
         particleCount: 150,
         spread: 80,
         origin: { y: 0.6 },
       });
 
-      // Clear localStorage
-      localStorage.removeItem('stormo_onboarding_state');
+      // Refresh session in background — don't block the animation
+      updateSession().catch(() => {});
 
-      // Update NextAuth session state
-      await updateSession();
-
+      // Redirect after the animation has time to play
       setTimeout(() => {
         router.push('/dashboard');
-      }, 2500);
+      }, 3500);
     } catch (err: any) {
       setError(err.message || 'An error occurred completing onboarding. Please try again.');
-      setIsSubmitting(false);
+      setSubmitPhase('idle');
     }
   };
 
@@ -799,22 +801,43 @@ export default function OnboardingPage() {
                 </div>
               ))}
 
-              {/* Submitting / success state */}
-              {isSubmitting && (
+              {/* Phase: building plan */}
+              {submitPhase === 'building' && (
                 <div className="flex justify-center py-6">
-                  <div className="bg-white border border-green-100 rounded-3xl p-8 text-center max-w-md shadow-[0_12px_40px_rgba(34,197,94,0.06)] flex flex-col items-center gap-4">
-                    <div className="h-16 w-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-500 shadow-sm animate-bounce">
-                      <Sparkles className="h-8 w-8 text-green-500" />
+                  <div className="bg-white border border-gray-100 rounded-3xl p-8 text-center max-w-md shadow-[0_12px_40px_rgba(0,0,0,0.04)] flex flex-col items-center gap-4">
+                    <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                      <Sparkles className="h-8 w-8 text-primary animate-pulse" />
                     </div>
                     <div>
-                      <h3 className="font-black text-dark text-xl">Your dashboard is ready!</h3>
+                      <h3 className="font-black text-dark text-xl">Building your plan…</h3>
                       <p className="text-subtle text-sm mt-2 leading-relaxed">
-                        Onboarding complete. Generating your tailored marketing plan. Redirecting you in just a moment...
+                        Analyzing your answers and crafting a personalized acquisition strategy. This takes a few seconds.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-xs text-subtle font-medium">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      Hang tight…
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phase: success — plan ready, email sent, confetti fired */}
+              {submitPhase === 'success' && (
+                <div className="flex justify-center py-6">
+                  <div className="bg-white border border-green-100 rounded-3xl p-8 text-center max-w-md shadow-[0_12px_40px_rgba(34,197,94,0.06)] flex flex-col items-center gap-4">
+                    <div className="h-16 w-16 bg-green-50 rounded-2xl flex items-center justify-center shadow-sm">
+                      <CheckCircle2 className="h-8 w-8 text-green-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-dark text-xl">Your plan is ready!</h3>
+                      <p className="text-subtle text-sm mt-2 leading-relaxed">
+                        We've emailed your personalized acquisition plan. Taking you to your dashboard now…
                       </p>
                     </div>
                     <div className="flex items-center justify-center gap-2 text-xs text-green-600 font-bold mt-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Finalizing setup...
+                      Redirecting…
                     </div>
                   </div>
                 </div>
@@ -832,7 +855,7 @@ export default function OnboardingPage() {
           </div>
 
           {/* ── Action area (buttons / inputs) ── */}
-          {currentQuestion && !isSubmitting && (
+          {currentQuestion && submitPhase === 'idle' && (
             <div className="bg-white border-t border-gray-100 px-4 sm:px-6 py-4 flex flex-col items-center gap-3 flex-shrink-0 z-10 shadow-[0_-2px_12px_rgba(0,0,0,0.04)]">
 
               {/* Choice buttons */}
@@ -937,7 +960,7 @@ export default function OnboardingPage() {
           )}
 
           {/* ── Free-text input ── */}
-          {currentQuestion && currentQuestion.type === 'text' && !isSubmitting && (
+          {currentQuestion && currentQuestion.type === 'text' && submitPhase === 'idle' && (
             <div className="px-4 sm:px-6 pb-4 pt-0 bg-white flex-shrink-0 z-10">
               <div className="max-w-3xl mx-auto flex flex-col gap-2">
                 {(isAnalyzingStore || isParsingAnswer) && (
