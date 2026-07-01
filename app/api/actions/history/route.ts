@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { actions } from '@/lib/db/schema';
-import { eq, and, ne, desc } from 'drizzle-orm';
+import { eq, and, ne, or, desc } from 'drizzle-orm';
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     // Build query conditions
     const conditions = [
       eq(actions.userId, userId),
-      ne(actions.scheduledFor, todayStr),   // Exclude today's action
+      // Hide today's pending action — but show it once completed or skipped
+      or(ne(actions.scheduledFor, todayStr), eq(actions.status, 'completed'), eq(actions.status, 'skipped'))!,
       ne(actions.status, 'scheduled'),       // Exclude future scheduled actions
     ];
 
