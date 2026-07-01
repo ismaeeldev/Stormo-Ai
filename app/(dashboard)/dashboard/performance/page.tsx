@@ -1,9 +1,11 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import Link from 'next/link';
 import { BarChart2, TrendingUp, TrendingDown, Users, MousePointerClick, ShoppingBag, Zap, Trophy, ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
+import { db } from '@/lib/db';
+import { actions, actionResults, strategyPerformance } from '@/lib/db/schema';
+import { eq, and, desc, gte, sql, count } from 'drizzle-orm';
 
 export const metadata: Metadata = {
   title: 'Performance | Stormo.io',
@@ -98,15 +100,155 @@ function BarRow({ label, value, max, sub }: { label: string; value: number; max:
   );
 }
 
-async function getPerformanceData(origin: string): Promise<PerfData | null> {
+async function getPerformanceData(userId: string): Promise<PerfData | null> {
   try {
-    const res = await fetch(`${origin}/api/performance`, {
-      cache: 'no-store',
-      headers: await headers(),
-    });
-    if (!res.ok) return null;
-    return res.json();
-  } catch {
+    const [{ completedWithResults }] = await db
+      .select({ completedWithResults: count() })
+      .from(actionResults)
+      .where(eq(actionResults.userId, userId));
+
+    if (completedWithResults < 20) {
+      return { eligible: false, completedWithResults, platforms: [], actionTypes: [], topActions: [], funnel: {} as PerfData['funnel'], trend: {} as PerfData['trend'] };
+    }
+
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 86_400_000);
+
+    const platforms = await db
+      .select({
+        platform: strategyPerformance.platform,
+        actionCount: strategyPerformance.actionCount,
+        avgEngagementRate: strategyPerformance.avgEngagementRate,
+        avgConversionRate: strategyPerformance.avgConversionRate,
+        totalAttributedSales: strategyPerformance.totalAttributedSales,
+      })
+      .from(strategyPerformance)
+      .where(eq(strategyPerformance.userId, userId))
+      .orderBy(desc(strategyPerformance.totalAttributedSales));
+
+    const actionTypeRaw = await db
+      .select({
+        actionType: strategyPerformance.actionType,
+        actionCount: strategyPerformance.actionCount,
+        avgEngagementRate: strategyPerformance.avgEngagementRate,
+        avgConversionRate: strategyPerformance.avgConversionRate,
+        totalAttributedSales: strategyPerformance.totalAttributedSales,
+      })
+      .from(strategyPerformance)
+      .where(eq(strategyPerformance.userId, userId));
+
+    const actionTypeAgg = new Map<string, { actionCount: number; totalSales: number; engSum: number; convSum: number; n: number }>();
+    for (const row of actionTypeRaw) {
+      const key = row.actionType ?? 'general';
+      const ex = actionTypeAgg.get(key) ?? { actionCount: 0, totalSales: 0, engSum: 0, convSum: 0, n: 0 };
+      ex.actionCount += row.actionCount ?? 0;
+      ex.totalSales += row.totalAttributedSales ?? 0;
+      ex.engSum += parseFloat((row.avgEngagementRate ?? '0').replace('%', '')) || 0;
+      ex.convSum += parseFloat((row.avgConversionRate ?? '0').replace('%', '')) || 0;
+      ex.n++;
+      actionTypeAgg.set(key, ex);
+    }
+
+    const actionTypes = Array.from(actionTypeAgg.entries())
+      .map(([type, v]) => ({
+        actionType: type,
+        actionCount: v.actionCount,
+        avgEngagementRate: (v.n > 0 ? (v.engSum / v.n).toFixed(1) : '0.0') + '%',
+        avgConversionRate: (v.n > 0 ? (v.convSum / v.n).toFixed(2) : '0.00') + '%',
+        totalAttributedSales: v.totalSales,
+      }))
+      .sort((a, b) => b.totalAttributedSales - a.totalAttributedSales);
+
+    const topActions = await db
+      .select({
+        id: actions.id,
+        title: actions.title,
+        channel: actions.channel,
+        actionType: actions.actionType,
+        scheduledFor: actions.scheduledFor,
+        reach: actionResults.reach,
+        engagement: actionResults.engagement,
+        clicksToStore: actionResults.clicksToStore,
+        salesAttributed: actionResults.salesAttributed,
+      })
+      .from(actionResults)
+      .innerJoin(actions, eq(actionResults.actionId, actions.id))
+      .where(eq(actionResults.userId, userId))
+      .orderBy(desc(actionResults.salesAttributed))
+      .limit(5);
+
+    const [funnel] = await db
+      .select({
+        totalReach: sql<number>`COALESCE(SUM(${actionResults.reach}), 0)`,
+        totalEngagement: sql<number>`COALESCE(SUM(${actionResults.engagement}), 0)`,
+        totalClicks: sql<number>`COALESCE(SUM(${actionResults.clicksToStore}), 0)`,
+        totalSales: sql<number>`COALESCE(SUM(${actionResults.salesAttributed}), 0)`,
+      })
+      .from(actionResults)
+      .where(eq(actionResults.userId, userId));
+
+    const [thisMonthRaw] = await db
+      .select({
+        reach: sql<number>`COALESCE(SUM(${actionResults.reach}), 0)`,
+        engagement: sql<number>`COALESCE(SUM(${actionResults.engagement}), 0)`,
+        sales: sql<number>`COALESCE(SUM(${actionResults.salesAttributed}), 0)`,
+      })
+      .from(actionResults)
+      .where(and(eq(actionResults.userId, userId), gte(actionResults.loggedAt, thirtyDaysAgo)));
+
+    const [lastMonthRaw] = await db
+      .select({
+        reach: sql<number>`COALESCE(SUM(${actionResults.reach}), 0)`,
+        engagement: sql<number>`COALESCE(SUM(${actionResults.engagement}), 0)`,
+        sales: sql<number>`COALESCE(SUM(${actionResults.salesAttributed}), 0)`,
+      })
+      .from(actionResults)
+      .where(and(eq(actionResults.userId, userId), gte(actionResults.loggedAt, sixtyDaysAgo)));
+
+    function pctChange(now: number, prev: number): string {
+      const delta = now - prev;
+      if (prev === 0) return now > 0 ? '+∞' : '0';
+      const pct = Math.round((delta / prev) * 100);
+      return (pct >= 0 ? '+' : '') + pct + '%';
+    }
+
+    const funnelReach = Number(funnel.totalReach);
+    const funnelEng = Number(funnel.totalEngagement);
+    const funnelClicks = Number(funnel.totalClicks);
+    const funnelSales = Number(funnel.totalSales);
+
+    const tm = { reach: Number(thisMonthRaw.reach), engagement: Number(thisMonthRaw.engagement), sales: Number(thisMonthRaw.sales) };
+    const lm = {
+      reach: Number(lastMonthRaw.reach) - tm.reach,
+      engagement: Number(lastMonthRaw.engagement) - tm.engagement,
+      sales: Number(lastMonthRaw.sales) - tm.sales,
+    };
+
+    return {
+      eligible: true,
+      completedWithResults,
+      platforms,
+      actionTypes,
+      topActions,
+      funnel: {
+        totalReach: funnelReach,
+        totalEngagement: funnelEng,
+        totalClicksToStore: funnelClicks,
+        totalSalesAttributed: funnelSales,
+        engagementRate: funnelReach > 0 ? ((funnelEng / funnelReach) * 100).toFixed(1) + '%' : '0.0%',
+        clickRate: funnelReach > 0 ? ((funnelClicks / funnelReach) * 100).toFixed(1) + '%' : '0.0%',
+        conversionRate: funnelReach > 0 ? ((funnelSales / funnelReach) * 100).toFixed(2) + '%' : '0.00%',
+      },
+      trend: {
+        thisMonth: tm,
+        lastMonth: lm,
+        reachChange: pctChange(tm.reach, lm.reach),
+        engagementChange: pctChange(tm.engagement, lm.engagement),
+        salesChange: pctChange(tm.sales, lm.sales),
+      },
+    };
+  } catch (err) {
+    console.error('[PerformancePage] DB error:', err);
     return null;
   }
 }
@@ -115,12 +257,7 @@ export default async function PerformancePage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
 
-  const headersList = await headers();
-  const host = headersList.get('host') ?? 'localhost:3000';
-  const proto = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-  const origin = `${proto}://${host}`;
-
-  const data = await getPerformanceData(origin);
+  const data = await getPerformanceData(session.user.id);
 
   if (!data) {
     return (
