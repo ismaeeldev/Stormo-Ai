@@ -79,6 +79,19 @@ export default function HomepageFooter() {
           <p>&copy; {currentYear} Stormo.io. All rights reserved.</p>
           <p>Built for new ecommerce founders seeking growth.</p>
         </div>
+
+        {/* Developer credit */}
+        <p className="text-center text-xs text-muted/50 mt-4">
+          Developed by{' '}
+          <a
+            href="https://ismaeeldev.netlify.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-primary transition-colors"
+          >
+            Muhammad Ismaeel
+          </a>
+        </p>
       </div>
     </footer>
   );

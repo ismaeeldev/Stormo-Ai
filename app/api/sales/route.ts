@@ -5,7 +5,6 @@ import { users, sales } from '@/lib/db/schema';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { checkAndAwardMilestones } from '@/lib/milestones/check-milestones';
 import {
-  triggerFirstSaleLogged,
   triggerFiveSalesLogged,
   triggerGrowthUnlocked,
 } from '@/lib/email/triggers';
@@ -92,12 +91,7 @@ export async function POST(request: Request) {
 
     // Sales milestone emails (non-blocking, fire-and-forget)
     if (userEmail) {
-      const prevTotal = newTotal - 1;
-      if (prevTotal === 0) {
-        // First ever sale
-        triggerFirstSaleLogged(userEmail, userName)
-          .catch((e) => console.error('[sales] first sale email failed:', e));
-      } else if (newTotal === 5) {
+      if (newTotal === 5) {
         triggerFiveSalesLogged(userEmail, userName)
           .catch((e) => console.error('[sales] five sales email failed:', e));
       } else if (newTotal === 8) {

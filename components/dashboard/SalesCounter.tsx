@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { ShoppingBag, Loader2, Trophy, X, Sparkles, Plus } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -36,7 +37,7 @@ export default function SalesCounter() {
       const data = await res.json();
       const total = data.totalSales ?? 0;
       setTotalSales(total);
-      setRecentSales(data.sales?.slice(0, 3) ?? []);
+      setRecentSales(data.sales?.slice(0, 5) ?? []);
       if (data.growthUnlocked || total >= GROWTH_THRESHOLD) setGrowthUnlocked(true);
     } catch {
       setFetchError(true);
@@ -268,7 +269,17 @@ export default function SalesCounter() {
       {/* Recent sales */}
       {recentSales.length > 0 && (
         <div className="border-t border-gray-50 px-5 py-3.5 space-y-1.5">
-          <p className="text-[10px] font-bold text-subtle uppercase tracking-wider mb-2">Recent</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-bold text-subtle uppercase tracking-wider">Recent</p>
+            {safeTotal > 5 && (
+              <Link
+                href="/dashboard/sales"
+                className="text-[10px] font-semibold text-primary hover:underline"
+              >
+                View all →
+              </Link>
+            )}
+          </div>
           {recentSales.map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2 min-w-0">

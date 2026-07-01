@@ -1,13 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Mail, RefreshCw, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 export default function VerifyEmailRequiredPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const email = session?.user?.email ?? '';
+
+  // Poll every 4 seconds to detect when the user verifies in another tab
+  useEffect(() => {
+    let attempts = 0;
+    const MAX = 150; // 10 minutes at 4s intervals
+    const timer = setInterval(async () => {
+      attempts++;
+      if (attempts > MAX) { clearInterval(timer); return; }
+      try {
+        const res = await fetch('/api/auth/session');
+        const s = await res.json();
+        if (s?.user?.emailVerified) {
+          clearInterval(timer);
+          router.push('/dashboard');
+        }
+      } catch {}
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const [resendStatus, setResendStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -72,8 +93,14 @@ export default function VerifyEmailRequiredPage() {
             </p>
           )}
 
-          <div className="bg-[#FDF0E8] rounded-xl p-4 mb-6 text-sm text-[#7A3A10] leading-relaxed">
+          <div className="bg-[#FDF0E8] rounded-xl p-4 mb-4 text-sm text-[#7A3A10] leading-relaxed">
             Click the link in that email to verify your account. After verification you'll be able to subscribe and access your dashboard.
+          </div>
+
+          {/* Auto-redirect notice */}
+          <div className="flex items-center justify-center gap-2 text-xs text-subtle mb-6">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary flex-shrink-0" />
+            <span>Waiting for verification… this page will update automatically.</span>
           </div>
 
           {/* Resend section */}

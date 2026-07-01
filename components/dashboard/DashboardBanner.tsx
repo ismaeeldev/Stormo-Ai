@@ -126,8 +126,8 @@ function resolveBanner(data: ProgressData): BannerConfig | null {
       message: (
         <>
           You completed your first action! Great start.{' '}
-          <Link href="/dashboard/history" className="underline underline-offset-2 font-semibold">
-            Here is what to do next →
+          <Link href="/dashboard#history" className="underline underline-offset-2 font-semibold">
+            Log your results →
           </Link>
         </>
       ),
@@ -146,7 +146,7 @@ function resolveBanner(data: ProgressData): BannerConfig | null {
       message: (
         <>
           You have an action from 2 days ago — log your results to help your AI improve.{' '}
-          <Link href="/dashboard/history" className="underline underline-offset-2 font-semibold">
+          <Link href="/dashboard#history" className="underline underline-offset-2 font-semibold">
             Log results →
           </Link>
         </>

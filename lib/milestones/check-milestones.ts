@@ -47,22 +47,24 @@ export async function checkAndAwardMilestones(userId: string, event: string) {
       console.log(`[Milestones] Awarded new milestone: ${milestoneKey} for user ${userId}`);
     }
 
-    // 3. Send milestone email if emailSent is false
+    // 3. Atomically claim the email send slot — only the caller that flips
+    //    emailSent from false→true actually sends. Concurrent callers get 0 rows.
     if (activeMilestone && !activeMilestone.emailSent) {
-      const user = await getUserById(userId);
-      if (user && user.email) {
-        try {
-          await sendMilestoneEmail(user.email, milestoneKey, user.name || 'Founder');
-          
-          // 4. Set emailSent = true
-          await db
-            .update(milestones)
-            .set({ emailSent: true })
-            .where(eq(milestones.id, activeMilestone.id));
-            
-          console.log(`[Milestones] Email sent successfully for milestone: ${milestoneKey}`);
-        } catch (emailErr) {
-          console.error(`[Milestones] Failed to send email for milestone ${milestoneKey}:`, emailErr);
+      const [claimed] = await db
+        .update(milestones)
+        .set({ emailSent: true })
+        .where(and(eq(milestones.id, activeMilestone.id), eq(milestones.emailSent, false)))
+        .returning({ id: milestones.id });
+
+      if (claimed) {
+        const user = await getUserById(userId);
+        if (user && user.email) {
+          try {
+            await sendMilestoneEmail(user.email, milestoneKey, user.name || 'Founder');
+            console.log(`[Milestones] Email sent for milestone: ${milestoneKey}`);
+          } catch (emailErr) {
+            console.error(`[Milestones] Failed to send email for milestone ${milestoneKey}:`, emailErr);
+          }
         }
       }
     }

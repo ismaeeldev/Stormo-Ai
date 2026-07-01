@@ -40,8 +40,8 @@ function VerifyEmailContent() {
         setStatus('success');
         // Refresh the session so emailVerified updates in the JWT
         await update();
-        // Redirect to homepage after 3 seconds
-        setTimeout(() => router.push('/'), 3000);
+        // Redirect to dashboard after 3 seconds
+        setTimeout(() => router.push('/dashboard'), 3000);
       } catch {
         setStatus('error');
         setErrorMsg('Something went wrong. Please try again.');
@@ -102,13 +102,13 @@ function VerifyEmailContent() {
               </div>
               <h1 className="text-xl font-bold text-dark mb-2">Email verified!</h1>
               <p className="text-sm text-subtle mb-6">
-                Your account is now active. Redirecting you to the homepage in a moment…
+                Your account is now active. Redirecting you to your dashboard in a moment…
               </p>
               <Link
-                href="/"
+                href="/dashboard"
                 className="inline-flex items-center justify-center bg-primary hover:bg-[#C4531A] text-white font-semibold rounded-xl px-8 py-3 text-sm transition-colors shadow-lg"
               >
-                Go to Homepage
+                Go to Dashboard
               </Link>
             </>
           )}

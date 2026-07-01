@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Loader2, Trash2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 const MAX_CHARS = 2000;
 
@@ -255,13 +256,25 @@ export default function AskStormo() {
                           : 'bg-white text-dark rounded-tl-none border border-gray-100 shadow-sm'
                       }`}
                     >
-                      {msg.content
-                        ? <p className="whitespace-pre-wrap">{msg.content}</p>
-                        : (
-                          /* Empty placeholder during streaming — show cursor */
-                          <span className="inline-block h-3 w-0.5 bg-primary animate-pulse align-middle" />
+                      {msg.content ? (
+                        msg.role === 'assistant' ? (
+                          <div className="prose prose-sm max-w-none
+                            prose-headings:font-bold prose-headings:text-dark prose-headings:text-sm prose-headings:mt-2 prose-headings:mb-1
+                            prose-p:text-dark/90 prose-p:leading-relaxed prose-p:my-1
+                            prose-strong:text-dark prose-strong:font-bold
+                            prose-li:text-dark/90 prose-li:my-0.5
+                            prose-ul:my-1 prose-ol:my-1
+                            prose-ul:pl-4 prose-ol:pl-4
+                            [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          <p className="whitespace-pre-wrap">{msg.content}</p>
                         )
-                      }
+                      ) : (
+                        /* Empty placeholder during streaming — show cursor */
+                        <span className="inline-block h-3 w-0.5 bg-primary animate-pulse align-middle" />
+                      )}
                     </div>
                   </div>
                 ))}

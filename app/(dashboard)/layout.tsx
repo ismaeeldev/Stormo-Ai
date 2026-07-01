@@ -17,6 +17,7 @@ import {
   LogOut,
   User as UserIcon,
   BarChart2,
+  ShoppingBag,
 } from 'lucide-react';
 import AskStormo from '@/components/dashboard/AskStormo';
 import DashboardTour from '@/components/dashboard/DashboardTour';
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { label: 'Outreach', href: '/dashboard/outreach', icon: Users, tourId: 'tour-outreach' },
     { label: 'Campaigns', href: '/dashboard/campaigns', icon: Calendar, tourId: 'tour-campaigns' },
     { label: 'Milestones', href: '/dashboard/milestones', icon: Trophy, tourId: 'tour-milestones' },
+    { label: 'Sales', href: '/dashboard/sales', icon: ShoppingBag },
     { label: 'Performance', href: '/dashboard/performance', icon: BarChart2 },
     { label: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
@@ -114,6 +116,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <LogOut className="h-4 w-4" />
             Sign Out
           </button>
+          <p className="text-center text-[10px] text-muted/50 pt-1">
+            Developed by{' '}
+            <a
+              href="https://ismaeeldev.netlify.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              Muhammad Ismaeel
+            </a>
+          </p>
         </div>
       </aside>
 
@@ -173,6 +186,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <LogOut className="h-4 w-4" />
                 Sign Out
               </button>
+              <p className="text-center text-[10px] text-muted/50 pt-1">
+                Developed by{' '}
+                <a
+                  href="https://ismaeeldev.netlify.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  Muhammad Ismaeel
+                </a>
+              </p>
             </div>
           </aside>
         </div>

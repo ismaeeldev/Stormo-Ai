@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     // Build query conditions
     const conditions = [
       eq(actions.userId, userId),
-      ne(actions.scheduledFor, todayStr), // Exclude today's action
+      ne(actions.scheduledFor, todayStr),   // Exclude today's action
+      ne(actions.status, 'scheduled'),       // Exclude future scheduled actions
     ];
 
     if (status && status !== 'all') {

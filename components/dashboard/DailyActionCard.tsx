@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Loader2, Clipboard, ClipboardCheck, Check, CalendarDays,
   AlertTriangle, Clock, Zap,
   Camera, Globe, Mail, Search, Users, Settings,
+  ArrowRight,
 } from 'lucide-react';
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
@@ -43,6 +45,17 @@ const CATEGORY_MAP: Record<string, string> = {
   seo: 'SEO', paid_ads: 'Paid Ads',
 };
 
+// One tip per day-of-week (0 = Sunday … 6 = Saturday)
+const DAY_TIPS: { tip: string; cta: string; href: string }[] = [
+  { tip: 'Rest and reflect — reviewing your week\'s wins keeps your momentum high.', cta: 'See your history', href: '/dashboard#history' },
+  { tip: 'Log your results from this action. It helps Stormo pick even better actions tomorrow.', cta: 'Log results', href: '/dashboard#history' },
+  { tip: 'Consistency beats intensity — showing up daily is your biggest advantage.', cta: 'View performance', href: '/dashboard/performance' },
+  { tip: 'Check what\'s working across your channels. Your Performance tab has the answer.', cta: 'Open Performance', href: '/dashboard/performance' },
+  { tip: 'Ask Stormo to brainstorm your next content batch or plan the rest of your week.', cta: 'Ask Stormo', href: '/dashboard' },
+  { tip: 'Share your win — your audience notices when you show up consistently.', cta: 'See your history', href: '/dashboard#history' },
+  { tip: 'Tomorrow\'s plan is already being prepared. Take a moment to log today\'s results.', cta: 'Log results', href: '/dashboard#history' },
+];
+
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
 interface Action {
@@ -54,6 +67,7 @@ interface Action {
   actionType: string;
   status: string;
   scheduledFor: string;
+  completedAt?: string | null;
 }
 
 /* ── Skeleton ────────────────────────────────────────────────────────────── */
@@ -118,12 +132,13 @@ function SkeletonCard({ msgIdx }: { msgIdx: number }) {
 /* ── Main component ──────────────────────────────────────────────────────── */
 
 export default function DailyActionCard() {
-  const [action, setAction]           = useState<Action | null>(null);
-  const [isLoading, setIsLoading]     = useState(true);
-  const [isCopied, setIsCopied]       = useState(false);
-  const [loadingMsgIdx, setMsgIdx]    = useState(0);
-  const [isCompleting, setCompleting] = useState(false);
-  const [error, setError]             = useState('');
+  const [action, setAction]               = useState<Action | null>(null);
+  const [isLoading, setIsLoading]         = useState(true);
+  const [isCopied, setIsCopied]           = useState(false);
+  const [loadingMsgIdx, setMsgIdx]        = useState(0);
+  const [isCompleting, setCompleting]     = useState(false);
+  const [error, setError]                 = useState('');
+  const [completedTime, setCompletedTime] = useState<Date | null>(null);
 
   useEffect(() => {
     if (!isLoading) { setMsgIdx(0); return; }
@@ -141,6 +156,7 @@ export default function DailyActionCard() {
         generateAction();
       } else if (data.status === 'completed' || data.status === 'skipped') {
         // Today's work is already done — show "All caught up" without generating
+        if (data.completedAt) setCompletedTime(new Date(data.completedAt));
         setAction(null);
         setIsLoading(false);
       } else {
@@ -195,6 +211,7 @@ export default function DailyActionCard() {
       });
       if (!res.ok) throw new Error('Failed to complete action');
       window.dispatchEvent(new CustomEvent('stormo:action-completed', { detail: { actionId: action.id } }));
+      setCompletedTime(new Date());
       setAction(null); // Shows "All caught up" immediately — no re-fetch needed
     } catch (err: any) { setError(err.message || 'Failed to complete action'); }
     finally { setCompleting(false); }
@@ -230,14 +247,60 @@ export default function DailyActionCard() {
   }
 
   if (!action) {
+    const dayTip = DAY_TIPS[new Date().getDay()];
+    const timeStr = completedTime
+      ? completedTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      : null;
+
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow p-10 flex flex-col items-center text-center gap-4 fade-up">
-        <div className="h-14 w-14 rounded-full bg-green-50 border border-green-200 flex items-center justify-center">
-          <Check className="h-7 w-7 text-green-600" />
+      <div className="bg-white rounded-2xl border border-gray-100 shadow overflow-hidden flex flex-col fade-up min-h-[280px]">
+        <div className="h-[3px] bg-green-500 w-full flex-shrink-0" />
+
+        {/* Header */}
+        <div className="px-6 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2 flex-shrink-0">
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            <h2 className="text-[11px] font-black text-dark uppercase tracking-[0.14em]">
+              Today's Action Plan
+            </h2>
+          </div>
+          {timeStr && (
+            <span className="text-[11px] font-semibold text-subtle bg-gray-50 border border-gray-100 rounded-full px-3 py-1 flex-shrink-0">
+              Completed at {timeStr}
+            </span>
+          )}
         </div>
-        <div>
-          <h3 className="font-bold text-dark text-lg">All caught up!</h3>
-          <p className="text-subtle text-sm mt-1 max-w-sm">You've completed all tasks for today. Come back tomorrow for your next plan.</p>
+
+        {/* Body */}
+        <div className="flex-1 flex flex-col px-6 lg:px-8 py-8 gap-6">
+          {/* Success indicator */}
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-2xl bg-green-50 border border-green-200 flex items-center justify-center flex-shrink-0">
+              <Check className="h-7 w-7 text-green-600" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-dark text-lg leading-tight">All caught up for today!</h3>
+              <p className="text-subtle text-sm mt-0.5">Great work — your consistency is building real momentum.</p>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-gray-100" />
+
+          {/* Day tip */}
+          <div className="flex flex-col gap-3">
+            <p className="text-[10px] font-bold text-subtle uppercase tracking-widest">While you wait for tomorrow</p>
+            <p className="text-sm text-dark/90 leading-relaxed">{dayTip.tip}</p>
+            <Link
+              href={dayTip.href}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-[#C4531A] transition-colors self-start"
+            >
+              {dayTip.cta}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </div>
     );

@@ -1,7 +1,8 @@
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { BarChart2, TrendingUp, TrendingDown, Users, MousePointerClick, ShoppingBag, Zap, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { BarChart2, TrendingUp, TrendingDown, Users, MousePointerClick, ShoppingBag, Zap, Trophy, ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -123,30 +124,85 @@ export default async function PerformancePage() {
 
   if (!data) {
     return (
-      <div className="max-w-3xl mx-auto py-16 text-center">
-        <BarChart2 className="h-12 w-12 text-subtle mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-dark mb-2">Performance</h1>
-        <p className="text-subtle">Could not load performance data. Try again later.</p>
+      <div className="max-w-2xl mx-auto py-16 space-y-6">
+        <div className="text-center">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <BarChart2 className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-dark mb-2">Performance</h1>
+          <p className="text-subtle max-w-md mx-auto">
+            Your performance data could not be loaded right now. This is usually a temporary issue.
+          </p>
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow p-6 text-left space-y-4 max-w-md mx-auto">
+          <p className="text-sm font-bold text-dark">What you can do:</p>
+          <ol className="text-sm text-subtle space-y-2 list-decimal list-inside">
+            <li>Refresh the page and try again</li>
+            <li>If this keeps happening, contact support</li>
+          </ol>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+          >
+            Back to dashboard
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
     );
   }
 
   if (!data.eligible) {
+    const logged = data.completedWithResults;
+    const needed = Math.max(0, 20 - logged);
+    const pct = Math.min(100, Math.round((logged / 20) * 100));
+
     return (
-      <div className="max-w-3xl mx-auto py-16 text-center">
-        <BarChart2 className="h-12 w-12 text-primary/40 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-dark mb-2">Performance Dashboard</h1>
-        <p className="text-subtle max-w-md mx-auto">
-          Complete more actions and log your results to unlock your performance dashboard.
-          You've logged results for <strong>{data.completedWithResults}</strong> action{data.completedWithResults !== 1 ? 's' : ''} — you need <strong>{20 - data.completedWithResults}</strong> more.
-        </p>
-        <div className="mt-6 h-2 bg-gray-100 rounded-full max-w-xs mx-auto overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full"
-            style={{ width: `${Math.min(100, (data.completedWithResults / 20) * 100)}%` }}
-          />
+      <div className="max-w-2xl mx-auto py-16 space-y-6">
+        <div className="text-center">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <BarChart2 className="h-8 w-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-dark mb-2">Performance</h1>
+          <p className="text-subtle max-w-md mx-auto">
+            Your performance dashboard unlocks after you log results for{' '}
+            <strong className="text-dark">20 actions</strong>. That gives Stormo enough data
+            to show you meaningful patterns and channel breakdowns.
+          </p>
         </div>
-        <p className="mt-2 text-xs text-subtle">{data.completedWithResults} / 20 results logged</p>
+
+        {/* Progress bar */}
+        <div className="max-w-md mx-auto space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-subtle">
+            <span>{logged} results logged</span>
+            <span>{needed} more to go</span>
+          </div>
+          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-700"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="text-center text-xs text-subtle">{pct}% complete</p>
+        </div>
+
+        {/* Guide card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow p-6 text-left space-y-4 max-w-md mx-auto">
+          <p className="text-sm font-bold text-dark">How to unlock this page:</p>
+          <ol className="text-sm text-subtle space-y-3 list-decimal list-inside">
+            <li>Complete your daily action plan each day</li>
+            <li>Open the action in your History tab</li>
+            <li>Log your reach, engagement, and sales (takes 30 seconds)</li>
+            <li>After 20 logged results, your charts and channel breakdown appear here</li>
+          </ol>
+          <Link
+            href="/dashboard#history"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+          >
+            Go to History to log results
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
     );
   }

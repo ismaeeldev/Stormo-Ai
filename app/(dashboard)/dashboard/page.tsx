@@ -137,7 +137,9 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Action History ──────────────────────────────────────────────── */}
-      <ActionHistoryList />
+      <div id="history">
+        <ActionHistoryList />
+      </div>
     </div>
   );
 }

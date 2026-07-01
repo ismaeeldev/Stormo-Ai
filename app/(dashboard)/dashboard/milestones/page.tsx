@@ -226,9 +226,15 @@ export default function MilestonesPage() {
         <Trophy className="h-10 w-10 text-primary/10" />
       </div>
 
-      {/* Achievement Grid */}
+      {/* Achievement Grid — achieved first, then locked */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MILESTONE_DEFS.map((def) => {
+        {[...MILESTONE_DEFS]
+          .sort((a, b) => {
+            const aAchieved = isAchieved(a.key) ? 0 : 1;
+            const bAchieved = isAchieved(b.key) ? 0 : 1;
+            return aAchieved - bAchieved;
+          })
+          .map((def) => {
           const achieved = isAchieved(def.key);
           const date = getAchievedDate(def.key);
 
@@ -261,6 +267,10 @@ export default function MilestonesPage() {
               </div>
             );
           } else {
+            const salesProgress = def.key === 'ten_sales'
+              ? Math.min(Math.round((totalSales / 10) * 100), 100)
+              : null;
+
             return (
               <div
                 key={def.key}
@@ -280,9 +290,24 @@ export default function MilestonesPage() {
                     <p className="text-subtle text-xs mt-1 leading-relaxed">{def.description}</p>
                   </div>
                 </div>
-                <div className="text-subtle text-xs mt-4 pt-3 border-t border-gray-100 italic">
-                  How to unlock: Complete the requirement above
-                </div>
+                {salesProgress !== null ? (
+                  <div className="mt-4 pt-3 border-t border-gray-100 space-y-1">
+                    <div className="flex justify-between text-xs text-subtle">
+                      <span>Progress</span>
+                      <span>{totalSales} / 10 sales</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div
+                        className="bg-primary h-1.5 rounded-full transition-all duration-500"
+                        style={{ width: `${salesProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-subtle text-xs mt-4 pt-3 border-t border-gray-100 italic">
+                    How to unlock: Complete the requirement above
+                  </div>
+                )}
               </div>
             );
           }
